@@ -1,5 +1,5 @@
 unique_ids:
-  forms: {Form1: X3ABKGLCKCDZ7C7S6ET73ARJT7AI47YM}
-  modules: {}
-  server_modules: {}
+  forms: {}
+  modules: {base: D6DWG6MTVIYQLXGJ4C2EWWQR5TFK5WAE}
+  server_modules: {persistence: RYOL7ZJRSWEMQVIQ2PGVR6SAVCBAK7OL}
   assets: {standard-page.html: WWT2ENU5ESFJKWAIPUEG47JYE2JVJ6DE, theme.css: JT4THXKOTHRMQQ42K6PDUIUDSJKMOVVR}
