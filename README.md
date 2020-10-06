@@ -7,7 +7,8 @@ Using this library, you can write simple code for your model that looks like:
 ```
 @model
 class Person:
-    attributes = ["name"]
+    first_name = Attribute()
+    last_name = Attribute()
 ```
 
 You can then use that class to create new Person
@@ -16,10 +17,10 @@ instances, save them to a data table, fetch them back and update them with code 
 ```
 from .model import Person
 
-person = Person(name="Owen")
+person = Person(first_name="Owen")
 person.save()
 
-person.name = "Owen Campbell"
+person.last_name = "Campbell"
 person.save()
 ```
 
@@ -62,41 +63,43 @@ There are two methods to install this module within your own application:
   Each model object should:
 
   * be decorated with the '@model' decorator
-  * include at least one name in its 'attributes' list
-  * optionally, include entries in its 'relationships' list, each of which must be an instance of the 'Relationship' class
+  * include class attributes which are instances of either Attribute or Relationship
+
 
   For example, if we wanted to model employees of a company who each have a name and date on which they started work, we might write the following:
 
   ```
-  from .base_model import model
+  from .base_model import model, Attribute
 
   @model
   class Employee:
-      attributes = ["name", "start_date"]
+      full_name = Attribute()
+      start_date = Attribute()
   ```
 
-  and then create a data table with 'id', 'name' and 'start_date' columns. (The id column must be a number)
+  and then create a data table with 'id', 'full_name' and 'start_date' columns. (The id column must be a number)
 
   If we wanted to create another class for departments within the organsiation and tag each employee to a department, we would:
 
   * Create the Department model class:
-  * Create a data table for this new model with colums 'id' and 'name'
+  * Create a data table for this new model with colums 'id' and 'title'
   * Add a relationship to our Person class
 
   The resulting model code would be:
 
   ```
-  from .base_model import model, Relationship
+  from .base_model import model, Attribute, Relationship
 
   @model
   class Department:
-      attributes = ["name"]
+      title = Attribute()
 
 
   @model
   class Employee:
-      attributes = ["name", "start_date"]
-      relationships = [Relationship(name="department", cls=Department)]
+      full_name = Attribute()
+      start_date = Attribute()
+      department = Relationship(cls=Department)
   ```
 
   Each of our classes now has several methods for interacting with our data tables:
@@ -111,10 +114,10 @@ There are two methods to install this module within your own application:
   import datetime as dt
   from .model import Employee, Department
 
-  department = Department(name="IT")
+  department = Department(title="IT")
   department.save()
 
-  employee = Employee(name="Owen", start_date=dt.datetime(2015, 3, 22), department=department)
+  employee = Employee(full_name="Owen", start_date=dt.datetime(2015, 3, 22), department=department)
   employee.save()
   ```
 
