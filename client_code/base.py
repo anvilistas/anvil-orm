@@ -139,6 +139,8 @@ def model(cls):
         "__init__": _constructor(attributes, relationships),
         "__eq__": equivalence,
         "__repr__": _representation(cls, attributes, relationships),
+        "_attributes": attributes,
+        "_relationships": relationships,
         "_from_row": _from_row(relationships),
         "get": _get,
         "list": _list,
