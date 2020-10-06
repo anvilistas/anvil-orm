@@ -1,54 +1,72 @@
-#    Anvil Model
-#    Copyright 2020 Owen Campbell
-#
-#   This program is free software: you can redistribute it and/or modify
-#   it under the terms of the GNU Affero General Public License as published
-#   by the Free Software Foundation, either version 3 of the License, or
-#   (at your option) any later version.
-#
-#   This program is distributed in the hope that it will be useful,
-#   but WITHOUT ANY WARRANTY; without even the implied warranty of
-#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#   GNU Affero General Public License for more details.
-
-#   You should have received a copy of the GNU Affero General Public License
-#    along with this program.  If not, see <https://www.gnu.org/licenses/>.
-#
-#   This program is published at https://github.com/meatballs/anvil-navigation
 import anvil.server
 
 __version__ = "0.1.0"
 
 
+class Attribute:
+    def __init__(self, required=True, default=None):
+        self.required = required
+        self.default = default
+
+
 class Relationship:
-    def __init__(self, name, cls):
-        self.name = name
+    def __init__(self, cls):
         self.cls = cls
 
 
 def _constructor(attributes, relationships):
-  
     def init(self, **kwargs):
-        self.id = None
-        valid_keys = attributes + [r.name for r in relationships]
+        self.id = kwargs.pop("id", None)
+
+        for name, relationship in relationships.items():
+            if name not in kwargs:
+                raise ValueError(f"No argument for mandatory relationship {name}")
+
+        valid_keys = [key for key in attributes] + [key for key in relationships]
         for key, value in kwargs.items():
             if key not in valid_keys:
-                raise ValueError(f"{type(self).__name__}.__init__ received an invalid argument: '{key}'")
+                raise ValueError(
+                    f"{type(self).__name__}.__init__ received an invalid argument: '{key}'"
+                )
             else:
                 setattr(self, key, value)
-        
+
+        for name, attribute in attributes.items():
+            if name not in kwargs:
+                setattr(self, name, attribute.default)
+
     return init
 
 
-@classmethod
-def _from_row(cls, row):
-    attrs = dict(row)
-    id = attrs.pop("id")
-    for column in cls.relationships:
-        attrs[column.name] = column.cls._from_row(row[column.name])
-    result = cls(**attrs)
-    result.id = id
-    return result
+def _representation(cls, attributes, relationships):
+    def representation(self):
+        attribute_repr = [
+            f"{key}={getattr(self, key)}" for key, value in attributes.items()
+        ]
+        relationship_repr = [
+            f"{key}_id={getattr(self, key).id}" for key, value in relationships.items()
+        ]
+        return f"{cls.__name__}({', '.join(attribute_repr)}, {', '.join(relationship_repr)})"
+
+    return representation
+
+
+def equivalence(self, other):
+    return self.id == other.id
+
+
+def _from_row(relationships):
+    @classmethod
+    def instance_from_row(cls, row):
+        attrs = dict(row)
+        id = attrs.pop("id")
+        for name, relationship in relationships.items():
+            attrs[name] = relationship.cls._from_row(row[name])
+        result = cls(**attrs)
+        result.id = id
+        return result
+
+    return instance_from_row
 
 
 @classmethod
@@ -61,23 +79,50 @@ def _list(cls, **filter_args):
     """Returns an iterator of data table Row objects"""
     return anvil.server.call("list_objects", cls.__name__, **filter_args)
 
-  
+
 def _save(self):
     anvil.server.call("save_object", self)
- 
-    
+
+
 def model(cls):
     """A decorator to provide a usable model class"""
-    attributes = getattr(cls, "attributes", [])
-    relationships = getattr(cls, "relationships", [])
-    model = type(cls.__name__, (object, ), {
-        "attributes": attributes,
-        "relationships": relationships,
+
+    # Skuplt doesn't appear to like using the __dict__ attribute of the cls, so we
+    # have to use dir and getattr instead
+    attributes = {
+        key: getattr(cls, key)
+        for key in dir(cls)
+        if isinstance(getattr(cls, key), Attribute)
+    }
+    relationships = {
+        key: getattr(cls, key)
+        for key in dir(cls)
+        if isinstance(getattr(cls, key), Relationship)
+    }
+    methods = {
+        key: getattr(cls, key)
+        for key in dir(cls)
+        if callable(getattr(cls, key)) and not key.startswith("__")
+    }
+    class_attributes = {
+        key: getattr(cls, key)
+        for key in dir(cls)
+        if not key.startswith("__")
+        and not isinstance(getattr(cls, key), (Attribute, Relationship))
+    }
+
+    members = {
         "__module__": cls.__module__,
         "__init__": _constructor(attributes, relationships),
-        "_from_row": _from_row,
+        "__eq__": equivalence,
+        "__repr__": _representation(cls, attributes, relationships),
+        "_from_row": _from_row(relationships),
         "get": _get,
         "list": _list,
-        "save": _save
-    })              
+        "save": _save,
+    }
+    members.update(methods)
+    members.update(class_attributes)
+
+    model = type(cls.__name__, (object,), members)
     return anvil.server.serializable_type(model)
