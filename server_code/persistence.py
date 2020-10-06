@@ -1,10 +1,13 @@
+import re
+
 import anvil.tables as tables
+import anvil.tables.query as q
 from anvil.tables import app_tables
 import anvil.server
 
 from . import model
 
-__version__ = "0.1.0"
+camel_pattern = re.compile(r"(?<!^)(?=[A-Z])")
 
 
 def get_sequence_value(sequence_id):
@@ -16,8 +19,12 @@ def get_sequence_value(sequence_id):
     return result
 
 
+def camel_to_snake(name):
+    return camel_pattern.sub("_", name).lower()
+
+
 def get_row(class_name, id):
-    table = getattr(app_tables, class_name.lower())
+    table = getattr(app_tables, camel_to_snake(class_name))
     return table.get(id=id)
 
 
@@ -30,14 +37,14 @@ def get_object(class_name, id):
 @anvil.server.callable
 def list_objects(class_name, **filter_args):
     cls = getattr(model, class_name)
-    table = getattr(app_tables, class_name.lower())
+    table = getattr(app_tables, camel_to_snake(class_name))
     rows = table.search(**filter_args)
     return [cls._from_row(row) for row in rows]
 
 
 @anvil.server.callable
 def save_object(instance):
-    table_name = type(instance).__name__.lower()
+    table_name = camel_to_snake(type(instance).__name__)
     table = getattr(app_tables, table_name)
 
     attributes = {
