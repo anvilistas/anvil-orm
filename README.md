@@ -4,7 +4,7 @@ perisistence using the data tables service.
 
 Using this library, you can write simple code for your model that looks like:
 
-```
+```python
 @model
 class Person:
     first_name = Attribute()
@@ -14,7 +14,7 @@ class Person:
 You can then use that class to create new Person
 instances, save them to a data table, fetch them back and update them with code as simple as:
 
-```
+```python
 from .model import Person
 
 person = Person(first_name="Owen")
@@ -68,7 +68,7 @@ There are two methods to install this module within your own application:
 
   For example, if we wanted to model employees of a company who each have a name and date on which they started work, we might write the following:
 
-  ```
+  ```python
   from .base_model import model, Attribute
 
   @model
@@ -87,7 +87,7 @@ There are two methods to install this module within your own application:
 
   The resulting model code would be:
 
-  ```
+  ```python
   from .base_model import model, Attribute, Relationship
 
   @model
@@ -99,12 +99,12 @@ There are two methods to install this module within your own application:
   class Employee:
       full_name = Attribute()
       start_date = Attribute()
-      department = Relationship(cls=Department)
+      department = Relationship(class_name="Department")
   ```
   
   We can also create optional attributes with default values:
   
-  ```
+  ```python
   from .base_model import model Attribute
   
   @model
@@ -112,7 +112,7 @@ There are two methods to install this module within your own application:
       full_name = Attribute()
       start_date = Attribute()
       shoe_size = Attribute(required=False, default=None)
-      department = Relationship(cls=Department)
+      department = Relationship(class_name="Department")
   ```
   
   And model classes can include whatever methods and properties you need.
@@ -125,7 +125,7 @@ There are two methods to install this module within your own application:
 
   For example, to create a new department and an employee within that department, we might write:
 
-  ```
+  ```python
   import datetime as dt
   from .model import Employee, Department
 
@@ -143,3 +143,9 @@ There are two methods to install this module within your own application:
 
   employee = Employee.get(id=1)
   ```
+
+# TODO
+The library also supports the following for which docs need writing:
+
+* relationships with multiple values
+* (Limited) maintenance of cross references between either side of a relationship.
