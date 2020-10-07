@@ -101,6 +101,21 @@ There are two methods to install this module within your own application:
       start_date = Attribute()
       department = Relationship(cls=Department)
   ```
+  
+  We can also create optional attributes with default values:
+  
+  ```
+  from .base_model import model Attribute
+  
+  @model
+  class Employee:
+      full_name = Attribute()
+      start_date = Attribute()
+      shoe_size = Attribute(required=False, default=None)
+      department = Relationship(cls=Department)
+  ```
+  
+  And model classes can include whatever methods and properties you need.
 
   Each of our classes now has several methods for interacting with our data tables:
 
@@ -128,4 +143,3 @@ There are two methods to install this module within your own application:
 
   employee = Employee.get(id=1)
   ```
-  
