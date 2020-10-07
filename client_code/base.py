@@ -21,6 +21,7 @@
 # SOFTWARE.
 #
 # This software is published at https://github.com/meatballs/anvil-model
+import sys
 import anvil.server
 
 __version__ = "0.1.0"
@@ -33,14 +34,26 @@ class Attribute:
 
 
 class Relationship:
-    def __init__(self, cls, required=True):
-        self.cls = cls
+    def __init__(
+        self, class_name, required=True, with_many=False, cross_reference=None
+    ):
+        self.class_name = class_name
         self.required = required
         self.default = None
+        if with_many:
+            self.default = []
+        self.with_many = with_many
+        self.cross_reference = cross_reference
+
+    @property
+    def cls(self):
+        return getattr(
+            sys.modules[__name__.replace("model_base", "model")], self.class_name
+        )
 
 
 def _constructor(attributes, relationships):
-    # We're just merging two dicts here but skulpt doesn't support the ** operator
+    # We're just merging dicts here but skulpt doesn't support the ** operator
     members = attributes.copy()
     members.update(relationships)
 
@@ -70,30 +83,37 @@ def _constructor(attributes, relationships):
     return init
 
 
-def _representation(cls, attributes, relationships):
-    def representation(self):
-        attribute_repr = [
-            f"{key}={getattr(self, key)}" for key, value in attributes.items()
-        ]
-        relationship_repr = [
-            f"{key}_id={getattr(self, key).id}" for key, value in relationships.items()
-        ]
-        return f"{cls.__name__}({', '.join(attribute_repr)}, {', '.join(relationship_repr)})"
-
-    return representation
-
-
 def equivalence(self, other):
     return self.id == other.id
 
 
 def _from_row(relationships):
     @classmethod
-    def instance_from_row(cls, row):
+    def instance_from_row(cls, row, cross_references=None):
+        if cross_references is None:
+            cross_references = set()
         attrs = dict(row)
         id = attrs.pop("id")
+
         for name, relationship in relationships.items():
-            attrs[name] = relationship.cls._from_row(row[name])
+            xref = None
+            if relationship.cross_reference is not None:
+                xref = (cls.__name__, name)
+
+            if xref is not None and xref in cross_references:
+                break
+
+            if xref is not None:
+                cross_references.add(xref)
+
+            if not relationship.with_many:
+                attrs[name] = relationship.cls._from_row(row[name], cross_references)
+            else:
+                attrs[name] = [
+                    relationship.cls._from_row(member, cross_references)
+                    for member in row[name]
+                ]
+
         result = cls(**attrs)
         result.id = id
         return result
@@ -147,7 +167,6 @@ def model(cls):
         "__module__": cls.__module__,
         "__init__": _constructor(attributes, relationships),
         "__eq__": equivalence,
-        "__repr__": _representation(cls, attributes, relationships),
         "_attributes": attributes,
         "_relationships": relationships,
         "_from_row": _from_row(relationships),

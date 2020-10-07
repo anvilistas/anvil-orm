@@ -25,6 +25,7 @@ import re
 
 import anvil.tables as tables
 from anvil.tables import app_tables
+import anvil.tables.query as q
 import anvil.server
 
 from . import model
@@ -51,6 +52,11 @@ def get_row(class_name, id):
     return table.get(id=id)
 
 
+def search_rows(class_name, ids):
+    table = getattr(app_tables, camel_to_snake(class_name))
+    return table.search(id=q.any_of(*ids))
+
+
 @anvil.server.callable
 def get_object(class_name, id):
     cls = getattr(model, class_name)
@@ -74,15 +80,46 @@ def save_object(instance):
         name: getattr(instance, name)
         for name, attribute in instance._attributes.items()
     }
-    relationships = {
+    single_relationships = {
         name: get_row(relationship.cls.__name__, getattr(instance, name).id)
         for name, relationship in instance._relationships.items()
+        if not relationship.with_many
+    }
+    multi_relationships = {
+        name: list(
+            search_rows(
+                relationship.cls.__name__,
+                [member.id for member in getattr(instance, name)],
+            )
+        )
+        for name, relationship in instance._relationships.items()
+        if relationship.with_many
     }
 
-    if instance.id is None:
-        with tables.Transaction():
+    members = {**attributes, **single_relationships, **multi_relationships}
+    cross_references = [
+        {"name": name, "relationship": relationship}
+        for name, relationship in instance._relationships.items()
+        if relationship.cross_reference is not None
+    ]
+
+    with tables.Transaction():
+        if instance.id is None:
             id = get_sequence_value(table_name)
-            table.add_row(id=id, **attributes, **relationships)
-    else:
-        row = table.get(id=instance.id)
-        row.update(**attributes, **relationships)
+            row = table.add_row(id=id, **members)
+        else:
+            row = table.get(id=instance.id)
+            row.update(**members)
+
+        # Very simple cross reference update
+        for xref in cross_references:
+
+            # We only update the 'many' side of a cross reference
+            if not xref["relationship"].with_many:
+                xref_row = single_relationships[xref["name"]]
+                xref_column = xref_row[xref["relationship"].cross_reference]
+
+                # And we simply ensure that the 'one' side is included in the 'many' side.
+                # We don't do any cleanup of possibly redundant entries on the 'many' side.
+                if row not in xref_column:
+                    xref_column += row
