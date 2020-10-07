@@ -33,30 +33,39 @@ class Attribute:
 
 
 class Relationship:
-    def __init__(self, cls):
+    def __init__(self, cls, required=True):
         self.cls = cls
+        self.required = required
+        self.default = None
 
 
 def _constructor(attributes, relationships):
+    # We're just merging two dicts here but skulpt doesn't support the ** operator
+    members = attributes.copy()
+    members.update(relationships)
+
     def init(self, **kwargs):
         self.id = kwargs.pop("id", None)
 
-        for name, relationship in relationships.items():
+        # Check that we've received arguments for all required members
+        required_args = [name for name, member in members.items() if member.required]
+        for name in required_args:
             if name not in kwargs:
-                raise ValueError(f"No argument for mandatory relationship {name}")
+                raise ValueError(f"No argument provided for required {name}")
 
-        valid_keys = [key for key in attributes] + [key for key in relationships]
-        for key, value in kwargs.items():
-            if key not in valid_keys:
+        # Check that the arguments received match the model and set the instance attributes if so
+        for name, value in kwargs.items():
+            if name not in members:
                 raise ValueError(
-                    f"{type(self).__name__}.__init__ received an invalid argument: '{key}'"
+                    f"{type(self).__name__}.__init__ received an invalid argument: '{name}'"
                 )
             else:
-                setattr(self, key, value)
+                setattr(self, name, value)
 
-        for name, attribute in attributes.items():
+        # Set the default instance attributes for optional members missing from the arguments
+        for name, member in members.items():
             if name not in kwargs:
-                setattr(self, name, attribute.default)
+                setattr(self, name, member.default)
 
     return init
 
