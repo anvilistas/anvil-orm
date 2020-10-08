@@ -98,7 +98,7 @@ def _from_row(relationships):
         for name, relationship in relationships.items():
             xref = None
             if relationship.cross_reference is not None:
-                xref = (cls.__name__, name)
+                xref = (cls.__name__, id, name)
 
             if xref is not None and xref in cross_references:
                 break
