@@ -128,7 +128,6 @@ def _get(cls, id):
 
 @classmethod
 def _list(cls, **filter_args):
-    """Returns an iterator of data table Row objects"""
     return anvil.server.call("list_objects", cls.__name__, **filter_args)
 
 
