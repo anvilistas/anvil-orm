@@ -28,13 +28,35 @@ import anvil.server
 __version__ = "0.1.0"
 
 
+# A fix until https://github.com/skulpt/skulpt/pull/1208 is deployed within Anvil
+class classmethod(object):
+    "Emulate PyClassMethod_Type() in Objects/funcobject.c"
+
+    def __init__(self, f):
+        self.f = f
+
+    def __get__(self, obj, klass=None):
+        if klass is None:
+            klass = type(obj)
+
+        def newfunc(*args, **kwargs):
+            return self.f(klass, *args, **kwargs)
+
+        return newfunc
+
+
 class Attribute:
+    """A class to represent an attribute of a model object class.
+
+    Attributes are persisted as columns on the class's relevant data table
+    """
     def __init__(self, required=True, default=None):
         self.required = required
         self.default = default
 
 
 class AttributeValue:
+    """A class to represent the instance value of an attribute."""
     def __init__(self, name, value, title=None):
         self.name = name
         self.value = value
@@ -45,6 +67,10 @@ class AttributeValue:
 
 
 class Relationship:
+    """A class to represent a relationship between two model object classes.
+
+    These are persisted as data tables linked columns.
+    """
     def __init__(
         self, class_name, required=True, with_many=False, cross_reference=None
     ):
@@ -62,6 +88,7 @@ class Relationship:
 
 
 class ModelSearchResultsIterator:
+    """A paging iterator over the results of a search cached on the server"""
     def __init__(self, class_name, module_name, rows_id, page_length):
         self.class_name = class_name
         self.module_name = module_name
@@ -92,6 +119,7 @@ class ModelSearchResultsIterator:
 
 @anvil.server.serializable_type
 class ModelSearchResults:
+    """A class to provide lazy loading of search results"""
     def __init__(self, class_name, module_name, rows_id, page_length):
         self.class_name = class_name
         self.module_name = module_name
@@ -105,6 +133,7 @@ class ModelSearchResults:
 
 
 def attribute_value(self, name, title=None, datetime_format=None):
+    """A factory function to generate AttributeValue instances"""
     value = getattr(self, name, None)
     if datetime_format is not None and value is not None:
         value = value.strftime(datetime_format)
@@ -112,6 +141,7 @@ def attribute_value(self, name, title=None, datetime_format=None):
 
 
 def _constructor(attributes, relationships):
+    """A function to return the __init__ function for the eventual model class"""
     # We're just merging dicts here but skulpt doesn't support the ** operator
     members = attributes.copy()
     members.update(relationships)
@@ -142,11 +172,14 @@ def _constructor(attributes, relationships):
     return init
 
 
-def equivalence(self, other):
+def _equivalence(self, other):
+    """A function to assert equivalence between client and server side copies of model
+    instances"""
     return self.id == other.id
 
 
 def _from_row(relationships):
+    """A factory function to generate a model instance from a data tables row."""
     @classmethod
     def instance_from_row(cls, row, cross_references=None):
         if cross_references is None:
@@ -187,6 +220,7 @@ def _from_row(relationships):
 
 @classmethod
 def _get(cls, id):
+    """Provide a method to fetch an object from the server"""
     return anvil.server.call("get_object", cls.__name__, cls.__module__, id)
 
 
@@ -194,6 +228,7 @@ def _get(cls, id):
 def search(
     cls, page_length=100, server_function=None, with_class_name=True, **search_args
 ):
+    """Provides a method to retrieve a set of model instances from the server"""
     _server_function = server_function or "basic_search"
     return anvil.server.call(
         _server_function,
@@ -206,7 +241,13 @@ def search(
 
 
 def _save(self):
+    """Provides a method to persist an instance to the database"""
     anvil.server.call("save_object", self)
+
+
+def _delete(self):
+    """Provides a method to delete an instance from the database"""
+    anvil.server.call("delete_object", self)
 
 
 def model_type(cls):
@@ -242,7 +283,7 @@ def model_type(cls):
     members = {
         "__module__": cls.__module__,
         "__init__": _constructor(attributes, relationships),
-        "__eq__": equivalence,
+        "__eq__": _equivalence,
         "_attributes": attributes,
         "_relationships": relationships,
         "_from_row": _from_row(relationships),
