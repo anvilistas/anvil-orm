@@ -22,6 +22,7 @@
 #
 # This software is published at https://github.com/meatballs/anvil-model
 import sys
+
 import anvil.server
 
 __version__ = "0.1.0"
@@ -31,6 +32,16 @@ class Attribute:
     def __init__(self, required=True, default=None):
         self.required = required
         self.default = default
+
+
+class AttributeValue:
+    def __init__(self, name, value, title=None):
+        self.name = name
+        self.value = value
+        self.title = title or name.title()
+
+    def to_dict(self):
+        return {"name": self.name, "value": self.value, "title": self.title}
 
 
 class Relationship:
@@ -47,9 +58,57 @@ class Relationship:
 
     @property
     def cls(self):
-        return getattr(
-            sys.modules[__name__.replace("model_base", "model")], self.class_name
+        return getattr(sys.modules[self.__module__], self.class_name)
+
+
+class ModelSearchResultsIterator:
+    def __init__(self, class_name, module_name, rows_id, page_length):
+        self.class_name = class_name
+        self.module_name = module_name
+        self.rows_id = rows_id
+        self.page_length = page_length
+        self.next_page = 0
+        self.is_last_page = False
+        self.iterator = iter([])
+
+    def __next__(self):
+        try:
+            return next(self.iterator)
+        except StopIteration:
+            if self.is_last_page:
+                raise
+            results, self.is_last_page = anvil.server.call(
+                "fetch_objects",
+                self.class_name,
+                self.module_name,
+                self.rows_id,
+                self.next_page,
+                self.page_length,
+            )
+            self.iterator = iter(results)
+            self.next_page += 1
+            return self.__next__()
+
+
+@anvil.server.serializable_type
+class ModelSearchResults:
+    def __init__(self, class_name, module_name, rows_id, page_length):
+        self.class_name = class_name
+        self.module_name = module_name
+        self.rows_id = rows_id
+        self.page_length = page_length
+
+    def __iter__(self):
+        return ModelSearchResultsIterator(
+            self.class_name, self.module_name, self.rows_id, self.page_length
         )
+
+
+def attribute_value(self, name, title=None, datetime_format=None):
+    value = getattr(self, name, None)
+    if datetime_format is not None and value is not None:
+        value = value.strftime(datetime_format)
+    return AttributeValue(name=name, value=value, title=title)
 
 
 def _constructor(attributes, relationships):
@@ -92,7 +151,12 @@ def _from_row(relationships):
     def instance_from_row(cls, row, cross_references=None):
         if cross_references is None:
             cross_references = set()
-        attrs = dict(row)
+
+        if anvil.server.context.type == "client":
+            attrs = dict(list(row))
+        else:
+            attrs = dict(row)
+
         id = attrs.pop("id")
 
         for name, relationship in relationships.items():
@@ -123,19 +187,22 @@ def _from_row(relationships):
 
 @classmethod
 def _get(cls, id):
-    return anvil.server.call("get_object", cls.__name__, id)
+    return anvil.server.call("get_object", cls.__name__, cls.__module__, id)
 
 
 @classmethod
-def _list(cls, **filter_args):
-    return anvil.server.call("list_objects", cls.__name__, **filter_args)
+def search(cls, page_length=100, server_function=None, **search_args):
+    _server_function = server_function or "basic_search"
+    return anvil.server.call(
+        _server_function, cls.__name__, cls.__module__, page_length, **search_args
+    )
 
 
 def _save(self):
     anvil.server.call("save_object", self)
 
 
-def model(cls):
+def model_type(cls):
     """A decorator to provide a usable model class"""
 
     # Skuplt doesn't appear to like using the __dict__ attribute of the cls, so we
@@ -162,6 +229,9 @@ def model(cls):
         and not isinstance(getattr(cls, key), (Attribute, Relationship))
     }
 
+    for relationship in relationships.values():
+        relationship.__module__ = cls.__module__
+
     members = {
         "__module__": cls.__module__,
         "__init__": _constructor(attributes, relationships),
@@ -169,8 +239,9 @@ def model(cls):
         "_attributes": attributes,
         "_relationships": relationships,
         "_from_row": _from_row(relationships),
+        "attribute_value": attribute_value,
         "get": _get,
-        "list": _list,
+        "search": search,
         "save": _save,
     }
     members.update(methods)

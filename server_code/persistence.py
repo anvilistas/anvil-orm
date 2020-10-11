@@ -21,17 +21,31 @@
 # SOFTWARE.
 #
 # This software is published at https://github.com/meatballs/anvil-model
+import functools
 import re
+from importlib import import_module
+from uuid import uuid4
 
-import anvil.tables as tables
-from anvil.tables import app_tables
-import anvil.tables.query as q
 import anvil.server
+import anvil.tables as tables
+import anvil.tables.query as q
+from anvil.tables import app_tables
 
-from . import model
+from .particles import ModelSearchResults
 
 __version__ = "0.1.0"
 camel_pattern = re.compile(r"(?<!^)(?=[A-Z])")
+
+
+def caching_query(func):
+    @functools.wraps(func)
+    def wrapper(class_name, module_name, page_length, *args, **kwargs):
+        rows_id = uuid4().hex
+        rows = func(class_name, module_name, page_length, *args, **kwargs)
+        anvil.server.session[rows_id] = rows
+        return ModelSearchResults(class_name, module_name, rows_id, page_length)
+
+    return wrapper
 
 
 def get_sequence_value(sequence_id):
@@ -58,17 +72,32 @@ def search_rows(class_name, ids):
 
 
 @anvil.server.callable
-def get_object(class_name, id):
-    cls = getattr(model, class_name)
+def get_object(class_name, module_name, id):
+    module = import_module(module_name)
+    cls = getattr(module, class_name)
     return cls._from_row(get_row(class_name, id))
 
 
 @anvil.server.callable
-def list_objects(class_name, **filter_args):
-    cls = getattr(model, class_name)
+def fetch_objects(class_name, module_name, rows_id, page, page_length):
+    module = import_module(module_name)
+    cls = getattr(module, class_name)
+    rows = anvil.server.session.get(rows_id, [])
+    start = page * page_length
+    end = (page + 1) * page_length
+    is_last_page = end >= len(rows)
+    if is_last_page:
+        del anvil.server.session[rows_id]
+    return [cls._from_row(row) for row in rows[start:end]], is_last_page
+
+
+@anvil.server.callable
+@caching_query
+def basic_search(class_name, module_name, page_length, **search_args):
+    module = import_module(module_name)
+    cls = getattr(module, class_name)
     table = getattr(app_tables, camel_to_snake(class_name))
-    rows = table.search(**filter_args)
-    return [cls._from_row(row) for row in rows]
+    return table.search(**search_args)
 
 
 @anvil.server.callable
