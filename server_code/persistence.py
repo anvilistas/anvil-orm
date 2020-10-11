@@ -41,7 +41,7 @@ def caching_query(func):
     @functools.wraps(func)
     def wrapper(class_name, module_name, page_length, *args, **kwargs):
         rows_id = uuid4().hex
-        rows = func(class_name, module_name, page_length, *args, **kwargs)
+        rows = func(class_name, *args, **kwargs)
         anvil.server.session[rows_id] = rows
         return ModelSearchResults(class_name, module_name, rows_id, page_length)
 
@@ -93,7 +93,7 @@ def fetch_objects(class_name, module_name, rows_id, page, page_length):
 
 @anvil.server.callable
 @caching_query
-def basic_search(class_name, module_name, page_length, **search_args):
+def basic_search(class_name, **search_args):
     table = getattr(app_tables, camel_to_snake(class_name))
     return table.search(**search_args)
 
