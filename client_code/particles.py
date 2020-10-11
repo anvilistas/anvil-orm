@@ -291,6 +291,7 @@ def model_type(cls):
         "get": _get,
         "search": search,
         "save": _save,
+        "delete": _delete,
     }
     members.update(methods)
     members.update(class_attributes)
