@@ -191,11 +191,17 @@ def _get(cls, id):
 
 
 @classmethod
-def search(cls, page_length=100, server_function=None, **search_args):
+def search(
+    cls, page_length=100, server_function=None, with_class_name=True, **search_args
+):
     _server_function = server_function or "basic_search"
-    search_args["class_name"] = cls.__name__
     return anvil.server.call(
-        _server_function, cls.__module__, page_length, **search_args
+        _server_function,
+        cls.__name__,
+        cls.__module__,
+        page_length,
+        with_class_name,
+        **search_args,
     )
 
 

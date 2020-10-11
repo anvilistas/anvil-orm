@@ -39,13 +39,13 @@ camel_pattern = re.compile(r"(?<!^)(?=[A-Z])")
 
 def caching_query(func):
     @functools.wraps(func)
-    def wrapper(module_name, page_length, **search_args):
+    def wrapper(class_name, module_name, page_length, with_class_name, **search_args):
+        if with_class_name:
+            search_args["class_name"] = class_name
         rows_id = uuid4().hex
         rows = func(**search_args)
         anvil.server.session[rows_id] = rows
-        return ModelSearchResults(
-            search_args["class_name"], module_name, rows_id, page_length
-        )
+        return ModelSearchResults(class_name, module_name, rows_id, page_length)
 
     return wrapper
 
@@ -99,9 +99,8 @@ def fetch_objects(class_name, module_name, rows_id, page, page_length):
 
 @anvil.server.callable
 @caching_query
-def basic_search(**search_args):
-    table = get_table(search_args.pop("class_name"))
-    return table.search(**search_args)
+def basic_search(class_name, **search_args):
+    return get_table(class_name).search(**search_args)
 
 
 @anvil.server.callable
