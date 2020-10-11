@@ -74,8 +74,7 @@ def get_row(class_name, id):
 
 
 def search_rows(class_name, ids):
-    table = getattr(app_tables, camel_to_snake(class_name))
-    return table.search(id=q.any_of(*ids))
+    return get_table(class_name).search(id=q.any_of(*ids))
 
 
 @anvil.server.callable
@@ -107,8 +106,7 @@ def basic_search(**search_args):
 
 @anvil.server.callable
 def save_object(instance):
-    table_name = camel_to_snake(type(instance).__name__)
-    table = getattr(app_tables, table_name)
+    table = get_table(type(instance).__name__)
 
     attributes = {
         name: getattr(instance, name)
