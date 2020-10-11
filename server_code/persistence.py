@@ -94,8 +94,6 @@ def fetch_objects(class_name, module_name, rows_id, page, page_length):
 @anvil.server.callable
 @caching_query
 def basic_search(class_name, module_name, page_length, **search_args):
-    module = import_module(module_name)
-    cls = getattr(module, class_name)
     table = getattr(app_tables, camel_to_snake(class_name))
     return table.search(**search_args)
 
