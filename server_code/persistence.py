@@ -39,11 +39,13 @@ camel_pattern = re.compile(r"(?<!^)(?=[A-Z])")
 
 def caching_query(func):
     @functools.wraps(func)
-    def wrapper(class_name, module_name, page_length, *args, **kwargs):
+    def wrapper(module_name, page_length, **search_args):
         rows_id = uuid4().hex
-        rows = func(class_name, *args, **kwargs)
+        rows = func(**search_args)
         anvil.server.session[rows_id] = rows
-        return ModelSearchResults(class_name, module_name, rows_id, page_length)
+        return ModelSearchResults(
+            search_args["class_name"], module_name, rows_id, page_length
+        )
 
     return wrapper
 
@@ -59,6 +61,11 @@ def get_sequence_value(sequence_id):
 
 def camel_to_snake(name):
     return camel_pattern.sub("_", name).lower()
+
+
+def get_table(class_name):
+    table_name = camel_to_snake(class_name)
+    return getattr(app_tables, table_name)
 
 
 def get_row(class_name, id):
@@ -93,8 +100,8 @@ def fetch_objects(class_name, module_name, rows_id, page, page_length):
 
 @anvil.server.callable
 @caching_query
-def basic_search(class_name, **search_args):
-    table = getattr(app_tables, camel_to_snake(class_name))
+def basic_search(**search_args):
+    table = get_table(search_args.pop("class_name"))
     return table.search(**search_args)
 
 
