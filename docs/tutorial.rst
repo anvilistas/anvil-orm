@@ -50,7 +50,7 @@ the following code to define the Book and Author classes::
 Add Some Entries
 ----------------
 Create a new module in the client code section of your app, name it 'startup' and set
-it as the startup module. Delete the content within that module and replace it with::
+it as the startup module. Delete its content and replace it with::
 
     import datetime as dt
     from .model import Book, Author
