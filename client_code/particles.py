@@ -50,6 +50,7 @@ class Attribute:
 
     Attributes are persisted as columns on the class's relevant data table
     """
+
     def __init__(self, required=True, default=None):
         self.required = required
         self.default = default
@@ -57,6 +58,7 @@ class Attribute:
 
 class AttributeValue:
     """A class to represent the instance value of an attribute."""
+
     def __init__(self, name, value, title=None):
         self.name = name
         self.value = value
@@ -71,6 +73,7 @@ class Relationship:
 
     These are persisted as data tables linked columns.
     """
+
     def __init__(
         self, class_name, required=True, with_many=False, cross_reference=None
     ):
@@ -89,6 +92,7 @@ class Relationship:
 
 class ModelSearchResultsIterator:
     """A paging iterator over the results of a search cached on the server"""
+
     def __init__(self, class_name, module_name, rows_id, page_length):
         self.class_name = class_name
         self.module_name = module_name
@@ -120,6 +124,7 @@ class ModelSearchResultsIterator:
 @anvil.server.serializable_type
 class ModelSearchResults:
     """A class to provide lazy loading of search results"""
+
     def __init__(self, class_name, module_name, rows_id, page_length):
         self.class_name = class_name
         self.module_name = module_name
@@ -180,6 +185,7 @@ def _equivalence(self, other):
 
 def _from_row(relationships):
     """A factory function to generate a model instance from a data tables row."""
+
     @classmethod
     def instance_from_row(cls, row, cross_references=None):
         if cross_references is None:
@@ -225,7 +231,7 @@ def _get(cls, id):
 
 
 @classmethod
-def search(
+def _search(
     cls, page_length=100, server_function=None, with_class_name=True, **search_args
 ):
     """Provides a method to retrieve a set of model instances from the server"""
@@ -242,7 +248,7 @@ def search(
 
 def _save(self):
     """Provides a method to persist an instance to the database"""
-    anvil.server.call("save_object", self)
+    return anvil.server.call("save_object", self)
 
 
 def _delete(self):
@@ -289,9 +295,9 @@ def model_type(cls):
         "_from_row": _from_row(relationships),
         "attribute_value": attribute_value,
         "get": _get,
-        "search": search,
+        "search": _search,
         "save": _save,
-        "delete": _delete,
+        "expunge": _delete,
     }
     members.update(methods)
     members.update(class_attributes)
