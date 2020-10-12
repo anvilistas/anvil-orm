@@ -99,4 +99,21 @@ and replace the content with::
 
 Launch the app and you should see the title and author's first name for both books
 in your output consule.
+
+Make a Change
+-------------
+Delete the code in your startup app (or rename it and create a new 'startup' module)
+and replace the content with::
     
+    from .model import Book, Author
+
+    fluent_python = Book.search(title="Fluent Python")
+    fluent_python.title = "Fluent Python (Clear, Concise, and Effective Programming)"
+    fluent_python.save()
+
+    practical_vim = Book.get(id=2)
+    practical_vim.title = "Practical Vim (Edit Text at the Speed of Thought)"
+    practical_vim.save()
+
+Start and stop the app and check your data tables. You should see the updated titles
+for both book rows.
