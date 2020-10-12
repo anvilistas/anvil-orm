@@ -46,3 +46,45 @@ the following code to define the Book and Author classes::
         title = Attribute()
         published_on = Attribute()
         author = Relationship(cls="Author")
+
+Add Some Entries
+----------------
+Create a new module in the client code section of your app, name it 'startup' and set
+it as the startup module. Delete the content within that module and replace it with::
+
+    import datetime as dt
+    from .model import Book, Author
+
+    print("Creating Luciano")
+    luciano = Author(first_name="Luciano", last_name="Ramalho")
+    luciano.save()
+
+    print("Creating Drew")
+    drew = Author(first_name="Drew", last_name="Neil")
+    drew.save()
+
+    print("Creating Fluent Python")
+    fluent_python = Book(
+        title="Fluent Python",
+        published_on=dt.datetime(2015, 8, 21).date(),
+        author=luciano
+    )
+    fluent_python.save()
+
+    print("Creating Practical Vim")
+    practical_vim = Book(
+        title="Practical Vim",
+        published_on=dt.datetime(2017, 1, 1).date(),
+        author=drew
+    )
+    practical_vim.save()
+
+Launch your app and stop it again. You should see the results of the print statements
+in its output console.
+
+Check the contents of your data tables. You should see both authors and books in their
+respective tables, with id numbers automatically assigned. You should also see two
+entries in the sequence table with the 'next' values ready for the next author and book.
+
+
+    
