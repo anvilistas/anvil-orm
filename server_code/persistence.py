@@ -150,6 +150,7 @@ def save_object(instance):
     with tables.Transaction():
         if instance.id is None:
             id = _get_sequence_value(table_name)
+            instance.id = id
             row = table.add_row(id=id, **members)
         else:
             row = table.get(id=instance.id)
@@ -167,6 +168,8 @@ def save_object(instance):
                 # We don't do any cleanup of possibly redundant entries on the 'many' side.
                 if row not in xref_column:
                     xref_column += row
+                    
+    return instance
 
 
 @anvil.server.callable

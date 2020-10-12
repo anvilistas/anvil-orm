@@ -50,7 +50,6 @@ class Attribute:
 
     Attributes are persisted as columns on the class's relevant data table
     """
-
     def __init__(self, required=True, default=None):
         self.required = required
         self.default = default
@@ -58,7 +57,6 @@ class Attribute:
 
 class AttributeValue:
     """A class to represent the instance value of an attribute."""
-
     def __init__(self, name, value, title=None):
         self.name = name
         self.value = value
@@ -73,7 +71,6 @@ class Relationship:
 
     These are persisted as data tables linked columns.
     """
-
     def __init__(
         self, class_name, required=True, with_many=False, cross_reference=None
     ):
@@ -92,7 +89,6 @@ class Relationship:
 
 class ModelSearchResultsIterator:
     """A paging iterator over the results of a search cached on the server"""
-
     def __init__(self, class_name, module_name, rows_id, page_length):
         self.class_name = class_name
         self.module_name = module_name
@@ -124,7 +120,6 @@ class ModelSearchResultsIterator:
 @anvil.server.serializable_type
 class ModelSearchResults:
     """A class to provide lazy loading of search results"""
-
     def __init__(self, class_name, module_name, rows_id, page_length):
         self.class_name = class_name
         self.module_name = module_name
@@ -185,16 +180,18 @@ def _equivalence(self, other):
 
 def _from_row(relationships):
     """A factory function to generate a model instance from a data tables row."""
-
     @classmethod
     def instance_from_row(cls, row, cross_references=None):
         if cross_references is None:
             cross_references = set()
 
         if anvil.server.context.type == "client":
-            attrs = dict(list(row))
-        else:
-            attrs = dict(row)
+            raise TypeError("_from_row is a server side function and cannot be called from client code")
+            
+        if row is None:
+            return None
+          
+        attrs = dict(row)
 
         id = attrs.pop("id")
 
@@ -214,7 +211,7 @@ def _from_row(relationships):
             else:
                 attrs[name] = [
                     relationship.cls._from_row(member, cross_references)
-                    for member in row[name]
+                    for member in row[name] if member is not None
                 ]
 
         result = cls(**attrs)
