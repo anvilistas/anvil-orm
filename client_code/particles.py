@@ -182,14 +182,14 @@ def _from_row(relationships):
     """A factory function to generate a model instance from a data tables row."""
     @classmethod
     def instance_from_row(cls, row, cross_references=None):
-        if cross_references is None:
-            cross_references = set()
-
         if anvil.server.context.type == "client":
             raise TypeError("_from_row is a server side function and cannot be called from client code")
             
         if row is None:
             return None
+          
+        if cross_references is None:
+            cross_references = set()
           
         attrs = dict(row)
 
