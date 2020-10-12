@@ -22,6 +22,8 @@ person.save()
 
 person.last_name = "Campbell"
 person.save()
+
+people = Person.search()
 ```
 
 And you can do that in both client and server side code!
