@@ -158,16 +158,16 @@ def save_object(instance):
 
         # Very simple cross reference update
         for xref in cross_references:
-
+    
             # We only update the 'many' side of a cross reference
             if not xref["relationship"].with_many:
                 xref_row = single_relationships[xref["name"]]
-                xref_column = xref_row[xref["relationship"].cross_reference]
-
+                column_name = xref["relationship"].cross_reference
+      
                 # And we simply ensure that the 'one' side is included in the 'many' side.
                 # We don't do any cleanup of possibly redundant entries on the 'many' side.
-                if row not in xref_column:
-                    xref_column += row
+                if row not in xref_row[column_name]:
+                    xref_row[column_name] += [row]
                     
     return instance
 
