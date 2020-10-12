@@ -127,13 +127,13 @@ def save_object(instance):
     single_relationships = {
         name: _get_row(relationship.cls.__name__, getattr(instance, name).id)
         for name, relationship in instance._relationships.items()
-        if not relationship.with_many
+        if not relationship.with_many and getattr(instance, name) is not None
     }
     multi_relationships = {
         name: list(
             _search_rows(
                 relationship.cls.__name__,
-                [member.id for member in getattr(instance, name)],
+                [member.id for member in getattr(instance, name) if member is not None],
             )
         )
         for name, relationship in instance._relationships.items()
