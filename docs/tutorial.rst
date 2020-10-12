@@ -8,6 +8,8 @@ the model library installed.
 For a book, we want to store its title, publication date and author. For an author, we
 want to store a first name and a last name.
 
+Create the Data Tables
+----------------------
 Create a data table called 'author' with three columns:
 
     * a number column called 'id'
@@ -26,7 +28,9 @@ Finally, create a table called 'sequence' with two columns:
     * a text column called 'id'
     * a number column called 'next'
 
-Next, create a module in the client code section of your app and call it 'model'. Add
+Create the Model Module
+-----------------------
+Create a module in the client code section of your app and call it 'model'. Add
 the following code to define the Book and Author classes::
 
     from .particles import model_type, Attribute, Relationship
