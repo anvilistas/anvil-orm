@@ -2,7 +2,8 @@ Howto...
 ========
 
 .. toctree::
-   :glob:
 
-   *
-
+    install
+    models
+    create_update
+    query
