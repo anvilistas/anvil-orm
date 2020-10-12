@@ -2,8 +2,11 @@ Tutorial
 ========
 
 For this tutorial, we're going to build a model to represent Books and their Authors.
-We'll assume you already have an anvil app with the data tables service enabled and
-the model library installed.
+You will need:
+
+    * A new anvil app
+    * The data tables service enabled 
+    * This model library installed
 
 For a book, we want to store its title, publication date and author. For an author, we
 want to store a first name and a last name.
