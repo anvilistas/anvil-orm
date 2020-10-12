@@ -107,7 +107,7 @@ and replace the content with::
     
     from .model import Book, Author
 
-    fluent_python = Book.search(title="Fluent Python")
+    fluent_python = Book.search(title="Fluent Python")[0]
     fluent_python.title = "Fluent Python (Clear, Concise, and Effective Programming)"
     fluent_python.save()
 

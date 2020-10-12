@@ -2,6 +2,7 @@
    :maxdepth: 2
 
    tutorial
+   howto/index
 
 Indices and tables
 ==================
