@@ -5,7 +5,7 @@ functionality.
 Using this library, you can write simple classes such as:
 
 ```python
-@model
+@model_type
 class Person:
     first_name = Attribute()
     last_name = Attribute()
