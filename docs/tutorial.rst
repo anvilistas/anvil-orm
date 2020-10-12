@@ -86,5 +86,17 @@ Check the contents of your data tables. You should see both authors and books in
 respective tables, with id numbers automatically assigned. You should also see two
 entries in the sequence table with the 'next' values ready for the next author and book.
 
+Fetch the Entries Back Again
+----------------------------
+Delete the code in your startup app (or rename it and create a new 'startup' module)
+and replace the content with::
 
+    from .model import Book, Author
+
+    for book in Book.search():
+        print(book.title)
+        print(book.author.first_name)
+
+Launch the app and you should see the title and author's first name for both books
+in your output consule.
     
