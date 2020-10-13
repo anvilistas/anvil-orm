@@ -50,6 +50,7 @@ class Attribute:
 
     Attributes are persisted as columns on the class's relevant data table
     """
+
     def __init__(self, required=True, default=None):
         self.required = required
         self.default = default
@@ -57,6 +58,7 @@ class Attribute:
 
 class AttributeValue:
     """A class to represent the instance value of an attribute."""
+
     def __init__(self, name, value, title=None):
         self.name = name
         self.value = value
@@ -71,6 +73,7 @@ class Relationship:
 
     These are persisted as data tables linked columns.
     """
+
     def __init__(
         self, class_name, required=True, with_many=False, cross_reference=None
     ):
@@ -89,6 +92,7 @@ class Relationship:
 
 class ModelSearchResultsIterator:
     """A paging iterator over the results of a search cached on the server"""
+
     def __init__(self, class_name, module_name, rows_id, page_length):
         self.class_name = class_name
         self.module_name = module_name
@@ -120,6 +124,7 @@ class ModelSearchResultsIterator:
 @anvil.server.serializable_type
 class ModelSearchResults:
     """A class to provide lazy loading of search results"""
+
     def __init__(self, class_name, module_name, rows_id, page_length):
         self.class_name = class_name
         self.module_name = module_name
@@ -168,32 +173,35 @@ def _constructor(attributes, relationships):
         for name, member in members.items():
             if name not in kwargs:
                 setattr(self, name, member.default)
-                
+
         if anvil.server.context.type == "client" and self.id is None:
             self.id = self.save().id
-                
+
     return init
 
 
 def _equivalence(self, other):
     """A function to assert equivalence between client and server side copies of model
     instances"""
-    return other is not None and self.id == other.id
+    return type(self) == type(other) and self.id == other.id
 
 
 def _from_row(relationships):
     """A factory function to generate a model instance from a data tables row."""
+
     @classmethod
     def instance_from_row(cls, row, cross_references=None):
         if anvil.server.context.type == "client":
-            raise TypeError("_from_row is a server side function and cannot be called from client code")
-            
+            raise TypeError(
+                "_from_row is a server side function and cannot be called from client code"
+            )
+
         if row is None:
             return None
-          
+
         if cross_references is None:
             cross_references = set()
-          
+
         attrs = dict(row)
 
         for name, relationship in relationships.items():
@@ -212,7 +220,8 @@ def _from_row(relationships):
             else:
                 attrs[name] = [
                     relationship.cls._from_row(member, cross_references)
-                    for member in row[name] if member is not None
+                    for member in row[name]
+                    if member is not None
                 ]
 
         result = cls(**attrs)
