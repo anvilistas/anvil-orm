@@ -168,14 +168,17 @@ def _constructor(attributes, relationships):
         for name, member in members.items():
             if name not in kwargs:
                 setattr(self, name, member.default)
-
+                
+        if anvil.server.context.type == "client" and self.id is None:
+            self.id = self.save().id
+                
     return init
 
 
 def _equivalence(self, other):
     """A function to assert equivalence between client and server side copies of model
     instances"""
-    return self.id == other.id
+    return other is not None and self.id == other.id
 
 
 def _from_row(relationships):
@@ -193,12 +196,10 @@ def _from_row(relationships):
           
         attrs = dict(row)
 
-        id = attrs.pop("id")
-
         for name, relationship in relationships.items():
             xref = None
             if relationship.cross_reference is not None:
-                xref = (cls.__name__, id, name)
+                xref = (cls.__name__, attrs["id"], name)
 
             if xref is not None and xref in cross_references:
                 break
@@ -215,7 +216,6 @@ def _from_row(relationships):
                 ]
 
         result = cls(**attrs)
-        result.id = id
         return result
 
     return instance_from_row
