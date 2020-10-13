@@ -18,7 +18,6 @@ fetch them back and update them with code as simple as:
 from .model import Person
 
 person = Person(first_name="Owen")
-person.save()
 
 person.last_name = "Campbell"
 person.save()
