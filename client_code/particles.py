@@ -174,9 +174,6 @@ def _constructor(attributes, relationships):
             if name not in kwargs:
                 setattr(self, name, member.default)
 
-        if anvil.server.context.type == "client" and self.id is None:
-            self.id = self.save().id
-
     return init
 
 

@@ -17,7 +17,7 @@ fetch them back and update them with code as simple as:
 ```python
 from .model import Person
 
-person = Person(first_name="Owen")
+person = Person(first_name="Owen").save()
 
 person.last_name = "Campbell"
 person.save()

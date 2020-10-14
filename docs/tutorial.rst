@@ -59,24 +59,24 @@ it as the startup module. Delete its content and replace it with::
     from .model import Book, Author
 
     print("Creating Luciano")
-    luciano = Author(first_name="Luciano", last_name="Ramalho")
+    luciano = Author(first_name="Luciano", last_name="Ramalho").save()
 
     print("Creating Drew")
-    drew = Author(first_name="Drew", last_name="Neil")
+    drew = Author(first_name="Drew", last_name="Neil").save()
 
     print("Creating Fluent Python")
     fluent_python = Book(
         title="Fluent Python",
         published_on=dt.datetime(2015, 8, 21).date(),
         author=luciano
-    )
+    ).save()
 
     print("Creating Practical Vim")
     practical_vim = Book(
         title="Practical Vim",
         published_on=dt.datetime(2017, 1, 1).date(),
         author=drew
-    )
+    ).save()
 
 Launch your app and stop it again. You should see the results of the print statements
 in its output console.
