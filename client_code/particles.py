@@ -307,4 +307,4 @@ def model_type(cls):
     members.update(class_attributes)
 
     model = type(cls.__name__, (object,), members)
-    return anvil.server.serializable_type(model)
+    return anvil.server.portable_class(model)
