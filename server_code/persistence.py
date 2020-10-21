@@ -163,7 +163,7 @@ def save_object(instance):
     with tables.Transaction():
         if (
             instance.uid is not None
-            and getattr(instance, "capability", None) is not None
+            and getattr(instance, "update_capability", None) is not None
         ):
             Capability.require(instance.update_capability, [class_name, instance.uid])
             has_permission = True
