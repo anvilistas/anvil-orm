@@ -17,7 +17,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = "Anvil Model"
+project = "Anvil ORM"
 copyright = "2020, Owen Campbell"
 author = "Owen Campbell"
 
