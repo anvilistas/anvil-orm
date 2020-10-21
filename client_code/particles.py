@@ -47,7 +47,6 @@ class classmethod(object):
 
 class Attribute:
     """A class to represent an attribute of a model object class.
-
     Attributes are persisted as columns on the class's relevant data table
     """
 
@@ -70,7 +69,6 @@ class AttributeValue:
 
 class Relationship:
     """A class to represent a relationship between two model object classes.
-
     These are persisted as data tables linked columns.
     """
 
@@ -152,7 +150,7 @@ def _constructor(attributes, relationships):
     members.update(relationships)
 
     def init(self, **kwargs):
-        self.id = kwargs.pop("id", None)
+        self.uid = kwargs.pop("uid", None)
 
         # Check that we've received arguments for all required members
         required_args = [name for name, member in members.items() if member.required]
@@ -180,7 +178,7 @@ def _constructor(attributes, relationships):
 def _equivalence(self, other):
     """A function to assert equivalence between client and server side copies of model
     instances"""
-    return type(self) == type(other) and self.id == other.id
+    return type(self) == type(other) and self.uid == other.uid
 
 
 def _from_row(relationships):
@@ -204,7 +202,7 @@ def _from_row(relationships):
         for name, relationship in relationships.items():
             xref = None
             if relationship.cross_reference is not None:
-                xref = (cls.__name__, attrs["id"], name)
+                xref = (cls.__name__, attrs["uid"], name)
 
             if xref is not None and xref in cross_references:
                 break
@@ -228,9 +226,9 @@ def _from_row(relationships):
 
 
 @classmethod
-def _get(cls, id):
+def _get(cls, uid):
     """Provide a method to fetch an object from the server"""
-    return anvil.server.call("get_object", cls.__name__, cls.__module__, id)
+    return anvil.server.call("get_object", cls.__name__, cls.__module__, uid)
 
 
 @classmethod
@@ -296,6 +294,9 @@ def model_type(cls):
         "_attributes": attributes,
         "_relationships": relationships,
         "_from_row": _from_row(relationships),
+        "update_capability": None,
+        "delete_capability": None,
+        "search_capability": None,
         "attribute_value": attribute_value,
         "get": _get,
         "search": _search,
