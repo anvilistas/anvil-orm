@@ -220,6 +220,10 @@ def _from_row(relationships):
                 ]
 
         result = cls(**attrs)
+        if anvil.server.call("has_update_permission", cls.__name__, attrs["uid"]):
+            result.update_capability = anvil.server.Capability([cls.__name__, attrs["uid"]])
+        if anvil.server.call("has_delete_permission", cls.__name__, attrs["uid"]):
+            result.delete_capability = anvil.server.Capability([cls.__name__, attrs["uid"]])
         return result
 
     return instance_from_row
