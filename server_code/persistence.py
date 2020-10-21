@@ -97,7 +97,7 @@ def get_object(class_name, module_name, uid):
         if anvil.server.call("has_delete_permission", class_name, uid):
             instance.delete_capability = Capability([class_name, uid])
         return instance
-  
+
 
 @anvil.server.callable
 def fetch_objects(class_name, module_name, rows_id, page, page_length):
