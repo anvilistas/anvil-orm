@@ -1,5 +1,5 @@
-# Model
-A library for [Anvil Applications](https://anvil.works) that provides ORM-like
+# Anvil ORM
+A library for [Anvil Applications](https://anvil.works) that provides Object Relational Mapping (ORM)
 functionality.
 
 Using this library, you can write simple classes such as:
