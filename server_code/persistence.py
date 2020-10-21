@@ -117,7 +117,8 @@ def fetch_objects(class_name, module_name, rows_id, page, page_length):
 @caching_query
 def basic_search(class_name, **search_args):
     """Perform a data tables search against the relevant table for the given class"""
-    return get_table(class_name).search(**search_args)
+    if anvil.server.call("has_search_permission", class_name):
+        return get_table(class_name).search(**search_args)
 
 
 @anvil.server.callable

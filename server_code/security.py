@@ -43,3 +43,8 @@ def has_update_permission(class_name, uid):
 @anvil.server.callable
 def has_delete_permission(class_name, uid):
     return True
+
+
+@anvil.server.callable
+def has_search_permission(class_name):
+    return True
