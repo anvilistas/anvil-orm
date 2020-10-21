@@ -32,4 +32,4 @@ The development of this library was partly funded by [Nanovare](https://www.mojo
 and [Osmosis Investment Management](https://www.osmosisim.com/)
 
 ## Documentation
-Installation and usage instructions are at [Readthedocs](https://anvil-model.readthedocs.io/en/latest/)
+Installation and usage instructions are at [Readthedocs](https://anvil-orm.readthedocs.io/en/latest/)
