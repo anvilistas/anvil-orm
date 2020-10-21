@@ -11,24 +11,34 @@ You will need:
 For a book, we want to store its title, publication date and author. For an author, we
 want to store a first name and a last name.
 
+Install the ORM
+---------------
+Create two modules in the server code section of your app named 'persistence' and 'security'. Replace the
+contents of both modules with the code from `persistence.py <https://github.com/meatballs/anvil-orm/blob/master/server_code/persistence.py>`_
+and `security.py <https://github.com/meatballs/anvil-orm/blob/master/server_code/security.py>`_
+respectively.
+
+Create a module in the client code section of your app named 'particles' and replace
+its content with the code from `particles.py <https://github.com/meatballs/anvil-orm/blob/master/client_code/particles.py>`_
+
 Create the Data Tables
 ----------------------
 Create a data table called 'author' with three columns:
 
-    * a number column called 'id'
+    * a number column called 'uid'
     * a text column called 'first_name'
     * a text column called 'last_name'
 
 Create a second table called 'book' with four columns:
 
-    * a number column called 'id'
+    * a number column called 'uid'
     * a text column called 'title'
     * a date column called 'published_on' 
     * a column which links to a single column in the 'author' table named 'author'.
 
 Finally, create a table called 'sequence' with two columns:
 
-    * a text column called 'id'
+    * a text column called 'name'
     * a number column called 'next'
 
 Create the Model Module
