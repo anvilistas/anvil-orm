@@ -140,8 +140,6 @@ class ModelSearchResults:
 def attribute_value(self, name, title=None):
     """A factory function to generate AttributeValue instances"""
     value = getattr(self, name, None)
-    #     if datetime_format is not None and value is not None:
-    #         value = value.strftime(datetime_format)
     return AttributeValue(name=name, value=value, title=title)
 
 
