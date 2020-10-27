@@ -1,3 +1,5 @@
+import anvil.users
+
 # MIT License
 
 # Copyright (c) 2020 Owen Campbell
@@ -36,6 +38,8 @@ from .particles import ModelSearchResults
 
 __version__ = "0.1.0"
 camel_pattern = re.compile(r"(?<!^)(?=[A-Z])")
+
+anvil.server.call("anvil.private.enable_profiling")
 
 
 def caching_query(search_function):
@@ -117,8 +121,7 @@ def fetch_objects(class_name, module_name, rows_id, page, page_length):
 @caching_query
 def basic_search(class_name, **search_args):
     """Perform a data tables search against the relevant table for the given class"""
-    if anvil.server.call("has_search_permission", class_name):
-        return get_table(class_name).search(**search_args)
+    return get_table(class_name).search(**search_args)
 
 
 @anvil.server.callable
@@ -161,14 +164,16 @@ def save_object(instance):
 
     has_permission = False
     with tables.Transaction():
-        if (
-            instance.uid is not None
-            and getattr(instance, "update_capability", None) is not None
-        ):
-            Capability.require(instance.update_capability, [class_name, instance.uid])
-            has_permission = True
-            row = table.get(uid=instance.uid)
-            row.update(**members)
+        if instance.uid is not None:
+            if getattr(instance, "update_capability") is not None:
+                Capability.require(
+                    instance.update_capability, [class_name, instance.uid]
+                )
+                has_permission = True
+                row = table.get(uid=instance.uid)
+                row.update(**members)
+            else:
+                raise ValueError("You do not have permission to update this object")
         else:
             if anvil.server.call("has_create_permission", class_name):
                 has_permission = True
@@ -180,7 +185,6 @@ def save_object(instance):
                     instance.update_capability = Capability([class_name, uid])
                 if anvil.server.call("has_delete_permission", class_name, uid):
                     instance.delete_capability = Capability([class_name, uid])
-
             else:
                 raise ValueError("You do not have permission to save this object")
 

@@ -1,3 +1,5 @@
+import anvil.users
+
 # MIT License
 
 # Copyright (c) 2020 Owen Campbell
@@ -135,11 +137,11 @@ class ModelSearchResults:
         )
 
 
-def attribute_value(self, name, title=None, datetime_format=None):
+def attribute_value(self, name, title=None):
     """A factory function to generate AttributeValue instances"""
     value = getattr(self, name, None)
-    if datetime_format is not None and value is not None:
-        value = value.strftime(datetime_format)
+    #     if datetime_format is not None and value is not None:
+    #         value = value.strftime(datetime_format)
     return AttributeValue(name=name, value=value, title=title)
 
 
@@ -220,10 +222,6 @@ def _from_row(relationships):
                 ]
 
         result = cls(**attrs)
-        if anvil.server.call("has_update_permission", cls.__name__, attrs["uid"]):
-            result.update_capability = anvil.server.Capability([cls.__name__, attrs["uid"]])
-        if anvil.server.call("has_delete_permission", cls.__name__, attrs["uid"]):
-            result.delete_capability = anvil.server.Capability([cls.__name__, attrs["uid"]])
         return result
 
     return instance_from_row
@@ -311,4 +309,4 @@ def model_type(cls):
     members.update(class_attributes)
 
     model = type(cls.__name__, (object,), members)
-    return anvil.server.portable_class(model)
+    return anvil.server.serializable_type(model)
