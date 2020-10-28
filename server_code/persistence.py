@@ -180,7 +180,6 @@ def save_object(instance):
                 uid = _get_sequence_value(table_name)
                 instance.uid = uid
                 row = table.add_row(uid=uid, **members)
-
                 if anvil.server.call("has_update_permission", class_name, uid):
                     instance.update_capability = Capability([class_name, uid])
                 if anvil.server.call("has_delete_permission", class_name, uid):
