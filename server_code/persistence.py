@@ -163,43 +163,42 @@ def save_object(instance):
     ]
 
     has_permission = False
-    with tables.Transaction():
-        if instance.uid is not None:
-            if getattr(instance, "update_capability") is not None:
-                Capability.require(
-                    instance.update_capability, [class_name, instance.uid]
-                )
-                has_permission = True
-                row = table.get(uid=instance.uid)
-                row.update(**members)
-            else:
-                raise ValueError("You do not have permission to update this object")
+    if instance.uid is not None:
+        if getattr(instance, "update_capability") is not None:
+            Capability.require(
+                instance.update_capability, [class_name, instance.uid]
+            )
+            has_permission = True
+            row = table.get(uid=instance.uid)
+            row.update(**members)
         else:
-            if anvil.server.call("has_create_permission", class_name):
-                has_permission = True
-                uid = _get_sequence_value(table_name)
-                instance.uid = uid
-                row = table.add_row(uid=uid, **members)
-                if anvil.server.call("has_update_permission", class_name, uid):
-                    instance.update_capability = Capability([class_name, uid])
-                if anvil.server.call("has_delete_permission", class_name, uid):
-                    instance.delete_capability = Capability([class_name, uid])
-            else:
-                raise ValueError("You do not have permission to save this object")
+            raise ValueError("You do not have permission to update this object")
+    else:
+        if anvil.server.call("has_create_permission", class_name):
+            has_permission = True
+            uid = _get_sequence_value(table_name)
+            instance.uid = uid
+            row = table.add_row(uid=uid, **members)
+            if anvil.server.call("has_update_permission", class_name, uid):
+                instance.update_capability = Capability([class_name, uid])
+            if anvil.server.call("has_delete_permission", class_name, uid):
+                instance.delete_capability = Capability([class_name, uid])
+        else:
+            raise ValueError("You do not have permission to save this object")
 
-        if has_permission:
-            # Very simple cross reference update
-            for xref in cross_references:
+    if has_permission:
+        # Very simple cross reference update
+        for xref in cross_references:
 
-                # We only update the 'many' side of a cross reference
-                if not xref["relationship"].with_many:
-                    xref_row = single_relationships[xref["name"]]
-                    column_name = xref["relationship"].cross_reference
+            # We only update the 'many' side of a cross reference
+            if not xref["relationship"].with_many:
+                xref_row = single_relationships[xref["name"]]
+                column_name = xref["relationship"].cross_reference
 
-                    # And we simply ensure that the 'one' side is included in the 'many' side.
-                    # We don't do any cleanup of possibly redundant entries on the 'many' side.
-                    if row not in xref_row[column_name]:
-                        xref_row[column_name] += [row]
+                # And we simply ensure that the 'one' side is included in the 'many' side.
+                # We don't do any cleanup of possibly redundant entries on the 'many' side.
+                if row not in xref_row[column_name]:
+                    xref_row[column_name] += [row]
 
     return instance
 
