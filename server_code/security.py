@@ -25,26 +25,21 @@ import anvil.server
 import anvil.users
 
 
-@anvil.server.callable
 def has_create_permission(class_name):
     return True
 
 
-@anvil.server.callable
 def has_read_permission(class_name, uid):
     return True
 
 
-@anvil.server.callable
 def has_update_permission(class_name, uid):
     return True
 
 
-@anvil.server.callable
 def has_delete_permission(class_name, uid):
     return True
 
 
-@anvil.server.callable
 def has_search_permission(class_name):
     return True

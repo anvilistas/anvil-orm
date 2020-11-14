@@ -1,19 +1,17 @@
-import anvil.users
-
 # MIT License
-
+#
 # Copyright (c) 2020 Owen Campbell
-
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -22,10 +20,11 @@ import anvil.users
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
-# This software is published at https://github.com/meatballs/anvil-model
+# This software is published at https://github.com/meatballs/anvil-orm
 import sys
 
 import anvil.server
+import anvil.users
 
 __version__ = "0.1.0"
 
@@ -93,13 +92,14 @@ class Relationship:
 class ModelSearchResultsIterator:
     """A paging iterator over the results of a search cached on the server"""
 
-    def __init__(self, class_name, module_name, rows_id, page_length):
+    def __init__(self, class_name, module_name, rows_id, page_length, max_depth=None):
         self.class_name = class_name
         self.module_name = module_name
         self.rows_id = rows_id
         self.page_length = page_length
         self.next_page = 0
         self.is_last_page = False
+        self.max_depth = max_depth
         self.iterator = iter([])
 
     def __next__(self):
@@ -115,6 +115,7 @@ class ModelSearchResultsIterator:
                 self.rows_id,
                 self.next_page,
                 self.page_length,
+                self.max_depth,
             )
             self.iterator = iter(results)
             self.next_page += 1
@@ -125,15 +126,20 @@ class ModelSearchResultsIterator:
 class ModelSearchResults:
     """A class to provide lazy loading of search results"""
 
-    def __init__(self, class_name, module_name, rows_id, page_length):
+    def __init__(self, class_name, module_name, rows_id, page_length, max_depth):
         self.class_name = class_name
         self.module_name = module_name
         self.rows_id = rows_id
         self.page_length = page_length
+        self.max_depth = max_depth
 
     def __iter__(self):
         return ModelSearchResultsIterator(
-            self.class_name, self.module_name, self.rows_id, self.page_length
+            self.class_name,
+            self.module_name,
+            self.rows_id,
+            self.page_length,
+            self.max_depth,
         )
 
 
@@ -185,7 +191,7 @@ def _from_row(relationships):
     """A factory function to generate a model instance from a data tables row."""
 
     @classmethod
-    def instance_from_row(cls, row, cross_references=None):
+    def instance_from_row(cls, row, cross_references=None, max_depth=None, depth=0):
         if anvil.server.context.type == "client":
             raise TypeError(
                 "_from_row is a server side function and cannot be called from client code"
@@ -210,45 +216,57 @@ def _from_row(relationships):
             if xref is not None:
                 cross_references.add(xref)
 
-            if not relationship.with_many:
-                attrs[name] = relationship.cls._from_row(row[name], cross_references)
-            else:
-                attrs[name] = [
-                    relationship.cls._from_row(member, cross_references)
-                    for member in row[name]
-                    if member is not None
-                ]
+            if max_depth is None or depth <= max_depth:
+                if not relationship.with_many:
+                    attrs[name] = relationship.cls._from_row(
+                        row[name], cross_references, max_depth, depth + 1
+                    )
+                else:
+                    attrs[name] = [
+                        relationship.cls._from_row(
+                            member, cross_references, max_depth, depth + 1
+                        )
+                        for member in row[name]
+                        if member is not None
+                    ]
 
         result = cls(**attrs)
-        if anvil.server.call("has_update_permission", cls.__name__, attrs["uid"]):
-            result.update_capability = anvil.server.Capability([cls.__name__, attrs["uid"]])
-        if anvil.server.call("has_delete_permission", cls.__name__, attrs["uid"]):
-            result.delete_capability = anvil.server.Capability([cls.__name__, attrs["uid"]])
+        #         if anvil.server.call("has_update_permission", cls.__name__, attrs["uid"]):
+        #             result.update_capability = anvil.server.Capability([cls.__name__, attrs["uid"]])
+        #         if anvil.server.call("has_delete_permission", cls.__name__, attrs["uid"]):
+        #             result.delete_capability = anvil.server.Capability([cls.__name__, attrs["uid"]])
         return result
 
     return instance_from_row
 
 
 @classmethod
-def _get(cls, uid):
+def _get(cls, uid, max_depth=0):
     """Provide a method to fetch an object from the server"""
-    return anvil.server.call("get_object", cls.__name__, cls.__module__, uid)
+    return anvil.server.call("get_object", cls.__name__, cls.__module__, uid, max_depth)
 
 
 @classmethod
 def _search(
-    cls, page_length=100, server_function=None, with_class_name=True, **search_args
+    cls,
+    page_length=100,
+    max_depth=0,
+    server_function=None,
+    with_class_name=True,
+    **search_args,
 ):
     """Provides a method to retrieve a set of model instances from the server"""
     _server_function = server_function or "basic_search"
-    return anvil.server.call(
+    results = anvil.server.call(
         _server_function,
         cls.__name__,
         cls.__module__,
         page_length,
+        max_depth,
         with_class_name,
         **search_args,
     )
+    return results
 
 
 def _save(self):
