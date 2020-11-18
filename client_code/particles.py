@@ -29,23 +29,6 @@ import anvil.users
 __version__ = "0.1.0"
 
 
-# A fix until https://github.com/skulpt/skulpt/pull/1208 is deployed within Anvil
-class classmethod(object):
-    "Emulate PyClassMethod_Type() in Objects/funcobject.c"
-
-    def __init__(self, f):
-        self.f = f
-
-    def __get__(self, obj, klass=None):
-        if klass is None:
-            klass = type(obj)
-
-        def newfunc(*args, **kwargs):
-            return self.f(klass, *args, **kwargs)
-
-        return newfunc
-
-
 class Attribute:
     """A class to represent an attribute of a model object class.
     Attributes are persisted as columns on the class's relevant data table
@@ -231,10 +214,6 @@ def _from_row(relationships):
                     ]
 
         result = cls(**attrs)
-        #         if anvil.server.call("has_update_permission", cls.__name__, attrs["uid"]):
-        #             result.update_capability = anvil.server.Capability([cls.__name__, attrs["uid"]])
-        #         if anvil.server.call("has_delete_permission", cls.__name__, attrs["uid"]):
-        #             result.delete_capability = anvil.server.Capability([cls.__name__, attrs["uid"]])
         return result
 
     return instance_from_row
@@ -281,29 +260,24 @@ def _delete(self):
 
 def model_type(cls):
     """A decorator to provide a usable model class"""
-
-    # Skuplt doesn't appear to like using the __dict__ attribute of the cls, so we
-    # have to use dir and getattr instead
+    class_members = {
+        key: value for key, value in cls.__dict__.items() if not key.startswith("__")
+    }
     attributes = {
-        key: getattr(cls, key)
-        for key in dir(cls)
-        if isinstance(getattr(cls, key), Attribute)
+        key: value
+        for key, value in class_members.items()
+        if isinstance(value, Attribute)
     }
     relationships = {
-        key: getattr(cls, key)
-        for key in dir(cls)
-        if isinstance(getattr(cls, key), Relationship)
+        key: value
+        for key, value in class_members.items()
+        if isinstance(value, Relationship)
     }
-    methods = {
-        key: getattr(cls, key)
-        for key in dir(cls)
-        if callable(getattr(cls, key)) and not key.startswith("__")
-    }
+    methods = {key: value for key, value in class_members.items() if callable(value)}
     class_attributes = {
-        key: getattr(cls, key)
-        for key in dir(cls)
-        if not key.startswith("__")
-        and not isinstance(getattr(cls, key), (Attribute, Relationship))
+        key: value
+        for key, value in class_members.items()
+        if not isinstance(value, (Attribute, Relationship))
     }
 
     for relationship in relationships.values():
@@ -324,6 +298,7 @@ def model_type(cls):
         "search": _search,
         "save": _save,
         "expunge": _delete,
+        "delete": _delete,
     }
     members.update(methods)
     members.update(class_attributes)
