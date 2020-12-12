@@ -170,6 +170,15 @@ def _equivalence(self, other):
     return type(self) == type(other) and self.uid == other.uid
 
 
+def _getitem(self, key):
+    """A function to provide dict like indexing"""
+    return getattr(self, key, None)
+
+
+def _setitem(self, key, value):
+    setattr(self, key, value)
+
+
 def _from_row(relationships):
     """A factory function to generate a model instance from a data tables row."""
 
@@ -287,6 +296,8 @@ def model_type(cls):
         "__module__": cls.__module__,
         "__init__": _constructor(attributes, relationships),
         "__eq__": _equivalence,
+        "__getitem__": _getitem,
+        "__setitem__": _setitem,
         "_attributes": attributes,
         "_relationships": relationships,
         "_from_row": _from_row(relationships),
@@ -304,4 +315,4 @@ def model_type(cls):
     members.update(class_attributes)
 
     model = type(cls.__name__, (object,), members)
-    return anvil.server.serializable_type(model)
+    return anvil.server.portable_class(model)
