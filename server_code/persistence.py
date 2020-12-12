@@ -79,17 +79,6 @@ def caching_query(search_function):
     return wrapper
 
 
-@tables.in_transaction
-def _get_sequence_value(name):
-    """Get and increment the next value for a given sequence"""
-    row = app_tables.sequence.get(name=name) or app_tables.sequence.add_row(
-        name=name, next=1
-    )
-    result = row["next"]
-    row["next"] += 1
-    return result
-
-
 def _camel_to_snake(name):
     """Convert a CamelCase string to snake_case"""
     return camel_pattern.sub("_", name).lower()
@@ -159,7 +148,10 @@ def fetch_objects(class_name, module_name, rows_id, page, page_length, max_depth
     if is_last_page:
         del anvil.server.session[rows_id]
     results = (
-        [cls._from_row(row, max_depth=max_depth) for row in rows[start:end]],
+        [
+            get_object(class_name, module_name, row["uid"], max_depth)
+            for row in rows[start:end]
+        ],
         is_last_page,
     )
     return results
@@ -220,14 +212,14 @@ def save_object(instance):
         else:
             raise ValueError("You do not have permission to update this object")
     else:
-        if anvil.server.call("has_create_permission", class_name):
+        if security.has_create_permission(class_name):
             has_permission = True
-            uid = _get_sequence_value(table_name)
+            uid = uuid4().hex
             instance.uid = uid
             row = table.add_row(uid=uid, **members)
-            if anvil.server.call("has_update_permission", class_name, uid):
+            if security.has_update_permission(class_name, uid):
                 instance.update_capability = Capability([class_name, uid])
-            if anvil.server.call("has_delete_permission", class_name, uid):
+            if security.has_delete_permission(class_name, uid):
                 instance.delete_capability = Capability([class_name, uid])
         else:
             raise ValueError("You do not have permission to save this object")
