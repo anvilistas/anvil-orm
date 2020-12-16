@@ -23,7 +23,7 @@
 # This software is published at https://github.com/meatballs/anvil-orm
 import functools
 import re
-from copy import deepcopy
+from copy import copy
 from importlib import import_module
 from uuid import uuid4
 
@@ -211,7 +211,7 @@ def save_object(instance):
         if security.has_create_permission(class_name):
             has_permission = True
             uid = uuid4().hex
-            instance = deepcopy(instance)
+            instance = copy(instance)
             instance.uid = uid
             row = table.add_row(uid=uid, **members)
             if security.has_update_permission(class_name, uid):
