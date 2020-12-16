@@ -23,11 +23,11 @@
 # This software is published at https://github.com/meatballs/anvil-orm
 import functools
 import re
+from copy import deepcopy
 from importlib import import_module
 from uuid import uuid4
 
 import anvil.server
-import anvil.tables as tables
 import anvil.tables.query as q
 import anvil.users
 from anvil.server import Capability
@@ -132,9 +132,6 @@ def get_object(class_name, module_name, uid, max_depth=None):
 @anvil.server.callable
 def fetch_objects(class_name, module_name, rows_id, page, page_length, max_depth=None):
     """Return a list of object instances from a cached data tables search"""
-    module = import_module(module_name)
-    cls = getattr(module, class_name)
-
     search_definition = anvil.server.session.get(rows_id, None)
     class_name = search_definition.pop("class_name")
     if search_definition is not None:
@@ -168,7 +165,6 @@ def basic_search(class_name, **search_args):
 def save_object(instance):
     """Persist an instance to the database by adding or updating a row"""
     class_name = type(instance).__name__
-    table_name = _camel_to_snake(class_name)
     table = get_table(class_name)
 
     attributes = {
@@ -215,6 +211,7 @@ def save_object(instance):
         if security.has_create_permission(class_name):
             has_permission = True
             uid = uuid4().hex
+            instance = deepcopy(instance)
             instance.uid = uid
             row = table.add_row(uid=uid, **members)
             if security.has_update_permission(class_name, uid):
@@ -233,8 +230,8 @@ def save_object(instance):
                 xref_row = single_relationships[xref["name"]]
                 column_name = xref["relationship"].cross_reference
 
-                # And we simply ensure that the 'one' side is included in the 'many' side.
-                # We don't do any cleanup of possibly redundant entries on the 'many' side.
+                # We simply ensure that the 'one' side is included in the 'many' side.
+                # We don't cleanup any possibly redundant entries on the 'many' side.
                 if row not in xref_row[column_name]:
                     xref_row[column_name] += [row]
 
