@@ -33,8 +33,8 @@ import anvil.users
 from anvil.server import Capability
 from anvil.tables import app_tables
 
-from . import security
-from .particles import ModelSearchResults
+from app import security
+from app.lib.crud.particles import ModelSearchResults
 
 __version__ = "0.1.1"
 camel_pattern = re.compile(r"(?<!^)(?=[A-Z])")
@@ -64,6 +64,7 @@ def caching_query(search_function):
     def wrapper(
         class_name, module_name, page_length, max_depth, with_class_name, **search_args
     ):
+        length = len(get_table(class_name).search(**search_args))
         if with_class_name:
             search_args["class_name"] = class_name
         rows_id = uuid4().hex
@@ -74,6 +75,7 @@ def caching_query(search_function):
             rows_id,
             page_length=page_length,
             max_depth=max_depth,
+            length=length,
         )
 
     return wrapper

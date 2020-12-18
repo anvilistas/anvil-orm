@@ -109,12 +109,18 @@ class ModelSearchResultsIterator:
 class ModelSearchResults:
     """A class to provide lazy loading of search results"""
 
-    def __init__(self, class_name, module_name, rows_id, page_length, max_depth):
+    def __init__(
+        self, class_name, module_name, rows_id, page_length, max_depth, length
+    ):
         self.class_name = class_name
         self.module_name = module_name
         self.rows_id = rows_id
         self.page_length = page_length
         self.max_depth = max_depth
+        self._length = length
+
+    def __len__(self):
+        return self._length
 
     def __iter__(self):
         return ModelSearchResultsIterator(
