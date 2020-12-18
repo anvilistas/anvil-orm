@@ -24,7 +24,7 @@
 import anvil.server
 import anvil.users
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 
 
 def has_create_permission(class_name):
