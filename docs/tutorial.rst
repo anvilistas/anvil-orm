@@ -18,7 +18,7 @@ contents of both modules with the code from `persistence.py <https://github.com/
 and `security.py <https://github.com/meatballs/anvil-orm/blob/master/server_code/security.py>`_
 respectively.
 
-Create a module in the client code section of your app named 'particles' and replace
+Create a 'lib' folder in the client code section of your app, add a 'crud' folder underneath it, and create a module there named 'particles'. Replace
 its content with the code from `particles.py <https://github.com/meatballs/anvil-orm/blob/master/client_code/particles.py>`_
 
 Create the Data Tables
@@ -46,7 +46,7 @@ Create the Model Module
 Create a module in the client code section of your app and call it 'model'. Add
 the following code to define the Book and Author classes::
 
-    from .particles import model_type, Attribute, Relationship
+    from app.lib.crud.particles import model_type, Attribute, Relationship
 
     @model_type
     class Author:
