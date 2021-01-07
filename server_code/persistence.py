@@ -36,7 +36,7 @@ from anvil.tables import app_tables
 from app import security
 from app.lib.crud.particles import ModelSearchResults
 
-__version__ = "0.1.4"
+__version__ = "0.1.5"
 camel_pattern = re.compile(r"(?<!^)(?=[A-Z])")
 
 anvil.server.call("anvil.private.enable_profiling")

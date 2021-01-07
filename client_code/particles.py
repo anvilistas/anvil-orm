@@ -26,7 +26,7 @@ import sys
 import anvil.server
 import anvil.users
 
-__version__ = "0.1.4"
+__version__ = "0.1.5"
 
 
 class Attribute:
