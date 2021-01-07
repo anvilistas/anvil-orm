@@ -220,13 +220,14 @@ def _from_row(relationships):
                         row[name], cross_references, max_depth, depth + 1
                     )
                 else:
-                    attrs[name] = [
-                        relationship.cls._from_row(
-                            member, cross_references, max_depth, depth + 1
-                        )
-                        for member in row[name]
-                        if member is not None
-                    ]
+                    attrs[name] = []
+                    if row[name]:
+                        attrs[name] = [
+                            relationship.cls._from_row(
+                                member, cross_references, max_depth, depth + 1
+                            )
+                            for member in row[name]
+                        ]
 
         result = cls(**attrs)
         return result
