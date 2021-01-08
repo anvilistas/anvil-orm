@@ -25,7 +25,7 @@ import anvil
 from app.client_lib import navigation
 from app import model, session
 
-__version__ = "0.1.6"
+__version__ = "0.1.7"
 
 
 def _camel_to_snake(name):
