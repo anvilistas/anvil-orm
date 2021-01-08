@@ -214,7 +214,6 @@ def _from_row(relationships):
             if xref is not None:
                 cross_references.add(xref)
 
-            attrs[name] = None
             if max_depth is None or depth < max_depth:
                 if not relationship.with_many:
                     attrs[name] = relationship.cls._from_row(
