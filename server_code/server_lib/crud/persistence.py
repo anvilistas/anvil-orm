@@ -34,7 +34,7 @@ from anvil.server import Capability
 from anvil.tables import app_tables
 
 from app import security
-from app.lib.crud.particles import ModelSearchResults
+from app.client_lib.crud.particles import ModelSearchResults
 
 __version__ = "0.1.6"
 camel_pattern = re.compile(r"(?<!^)(?=[A-Z])")
