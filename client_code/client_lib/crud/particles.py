@@ -26,7 +26,7 @@ import sys
 import anvil.server
 import anvil.users
 
-__version__ = "0.1.9"
+__version__ = "0.1.8"
 
 
 class Attribute:
@@ -229,8 +229,7 @@ def _from_row(relationships):
                         for member in row[name]
                     ]
 
-        result = cls(**attrs)
-        return result
+        return cls(**attrs)
 
     return instance_from_row
 
