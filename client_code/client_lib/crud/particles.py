@@ -245,7 +245,7 @@ def _from_row(attributes, relationships):
 
 
 @classmethod
-def _get(cls, uid, max_depth=0):
+def _get(cls, uid, max_depth=None):
     """Provide a method to fetch an object from the server"""
     return anvil.server.call("get_object", cls.__name__, cls.__module__, uid, max_depth)
 
@@ -254,7 +254,7 @@ def _get(cls, uid, max_depth=0):
 def _search(
     cls,
     page_length=100,
-    max_depth=0,
+    max_depth=None,
     server_function=None,
     with_class_name=True,
     **search_args,
