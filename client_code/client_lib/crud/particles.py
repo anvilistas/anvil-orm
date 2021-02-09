@@ -188,7 +188,7 @@ def _setitem(self, key, value):
     setattr(self, key, value)
 
 
-def _from_row(attributes, relationships):
+def _from_row(unique_identifier, attributes, relationships):
     """A factory function to generate a model instance from a data tables row."""
 
     @classmethod
@@ -210,6 +210,8 @@ def _from_row(attributes, relationships):
             for key, value in attrs.items()
             if key in attributes or key == "uid"
         }
+        if "uid" not in attrs:
+            attrs["uid"] = attrs[unique_identifier]
 
         for name, relationship in relationships.items():
             xref = None
@@ -324,7 +326,7 @@ def model_type(cls):
         "__setitem__": _setitem,
         "_attributes": attributes,
         "_relationships": relationships,
-        "_from_row": _from_row(attributes, relationships),
+        "_from_row": _from_row(unique_identifier, attributes, relationships),
         "_unique_identifier": unique_identifier,
         "update_capability": None,
         "delete_capability": None,
