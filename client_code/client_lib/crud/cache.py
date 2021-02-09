@@ -23,7 +23,7 @@
 # This software is published at https://github.com/meatballs/anvil-orm
 from app import model
 
-__version__ = "0.1.16"
+__version__ = "0.1.17"
 
 
 class Cache:
