@@ -182,7 +182,11 @@ def save_object(instance):
         for name, attribute in instance._attributes.items()
     }
     single_relationships = {
-        name: _get_row(relationship.cls.__name__, getattr(instance, name).uid)
+        name: _get_row(
+            relationship.cls.__name__,
+            relationship.cls.__module__,
+            getattr(instance, name).uid,
+        )
         for name, relationship in instance._relationships.items()
         if not relationship.with_many and getattr(instance, name) is not None
     }
