@@ -205,7 +205,11 @@ def _from_row(attributes, relationships):
             cross_references = set()
 
         attrs = dict(row)
-        attrs = {key: value for key, value in attrs.items() if key in attributes}
+        attrs = {
+            key: value
+            for key, value in attrs.items()
+            if key in attributes or key == "uid"
+        }
 
         for name, relationship in relationships.items():
             xref = None
