@@ -29,14 +29,14 @@ __version__ = "0.1.11"
 class Cache:
     def __init__(self):
         self._items = {}
-        
+
     def refresh(self, model_name, max_depth=1, **search_args):
         model_class = getattr(model, model_name)
         self._items[model_name] = [o for o in model_class.search(**search_args)]
         return self._items[model_name]
-      
+
     def __getitem__(self, key):
         return self._items[key]
-      
+
     def __setitem__(self, key, value):
         raise ValueError("You can only set the cache using the refresh method")

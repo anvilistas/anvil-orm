@@ -33,7 +33,7 @@ import anvil.users
 from anvil.server import Capability
 from anvil.tables import app_tables
 
-from app import security
+from app.server_lib.crud import security
 from app.client_lib.crud.particles import ModelSearchResults
 
 __version__ = "0.1.11"
@@ -92,10 +92,13 @@ def get_table(class_name):
     return getattr(app_tables, table_name)
 
 
-def _get_row(class_name, uid):
+def _get_row(class_name, module_name, uid):
     """Return the data tables row for for a given object instance"""
     table = getattr(app_tables, _camel_to_snake(class_name))
-    return table.get(uid=uid)
+    module = import_module(module_name)
+    cls = getattr(module, class_name)
+    search_kwargs = {cls._unique_identifier: uid}
+    return table.get(**search_kwargs)
 
 
 def _search_rows(class_name, uids):
@@ -109,7 +112,9 @@ def get_object(class_name, module_name, uid, max_depth=None):
     if security.has_read_permission(class_name, uid):
         module = import_module(module_name)
         cls = getattr(module, class_name)
-        instance = cls._from_row(_get_row(class_name, uid), max_depth=max_depth)
+        instance = cls._from_row(
+            _get_row(class_name, module_name, uid), max_depth=max_depth
+        )
         if security.has_update_permission(class_name, uid):
             instance.update_capability = Capability([class_name, uid])
         if security.has_delete_permission(class_name, uid):
@@ -134,7 +139,8 @@ def get_object(class_name, module_name, uid, max_depth=None):
 @anvil.server.callable
 def fetch_objects(class_name, module_name, rows_id, page, page_length, max_depth=None):
     """Return a list of object instances from a cached data tables search"""
-    search_definition = anvil.server.session.get(rows_id, None)
+    search_definition = anvil.server.session.get(rows_id, None).copy()
+    print(search_definition)
     if search_definition is not None:
         class_name = search_definition.pop("class_name")
         rows = get_table(class_name).search(**search_definition)
@@ -146,9 +152,12 @@ def fetch_objects(class_name, module_name, rows_id, page, page_length, max_depth
     is_last_page = end >= len(rows)
     if is_last_page:
         del anvil.server.session[rows_id]
+
+    module = import_module(module_name)
+    cls = getattr(module, class_name)
     results = (
         [
-            get_object(class_name, module_name, row["uid"], max_depth)
+            get_object(class_name, module_name, row[cls._unique_identifier], max_depth)
             for row in rows[start:end]
         ],
         is_last_page,

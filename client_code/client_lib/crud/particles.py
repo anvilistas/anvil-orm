@@ -1,3 +1,5 @@
+import anvil.users
+
 # MIT License
 #
 # Copyright (c) 2020 Owen Campbell
@@ -34,9 +36,10 @@ class Attribute:
     Attributes are persisted as columns on the class's relevant data table
     """
 
-    def __init__(self, required=True, default=None):
+    def __init__(self, required=True, default=None, is_uid=False):
         self.required = required
         self.default = default
+        self.is_uid = is_uid
 
 
 class AttributeValue:
@@ -185,7 +188,7 @@ def _setitem(self, key, value):
     setattr(self, key, value)
 
 
-def _from_row(relationships):
+def _from_row(attributes, relationships):
     """A factory function to generate a model instance from a data tables row."""
 
     @classmethod
@@ -202,6 +205,7 @@ def _from_row(relationships):
             cross_references = set()
 
         attrs = dict(row)
+        attrs = {key: value for key, value in attrs.items() if key in attributes}
 
         for name, relationship in relationships.items():
             xref = None
@@ -285,6 +289,14 @@ def model_type(cls):
         for key, value in class_members.items()
         if isinstance(value, Attribute)
     }
+    unique_identifier = "uid"
+    unique_identifiers = [key for key, value in attributes.items() if value.is_uid]
+    if unique_identifiers:
+        if len(unique_identifiers) > 1:
+            raise AttributeError("Multiple unique identifiers defined")
+        else:
+            unique_identifier = unique_identifiers[0]
+
     relationships = {
         key: value
         for key, value in class_members.items()
@@ -308,7 +320,8 @@ def model_type(cls):
         "__setitem__": _setitem,
         "_attributes": attributes,
         "_relationships": relationships,
-        "_from_row": _from_row(relationships),
+        "_from_row": _from_row(attributes, relationships),
+        "_unique_identifier": unique_identifier,
         "update_capability": None,
         "delete_capability": None,
         "search_capability": None,
