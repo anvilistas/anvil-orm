@@ -140,7 +140,6 @@ def get_object(class_name, module_name, uid, max_depth=None):
 def fetch_objects(class_name, module_name, rows_id, page, page_length, max_depth=None):
     """Return a list of object instances from a cached data tables search"""
     search_definition = anvil.server.session.get(rows_id, None).copy()
-    print(search_definition)
     if search_definition is not None:
         class_name = search_definition.pop("class_name")
         rows = get_table(class_name).search(**search_definition)
