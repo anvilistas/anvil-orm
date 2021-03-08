@@ -13,13 +13,14 @@ want to store a first name and a last name.
 
 Install the ORM
 ---------------
-Create two modules in the server code section of your app named 'persistence' and 'security'. Replace the
-contents of both modules with the code from `persistence.py <https://github.com/meatballs/anvil-orm/blob/master/server_code/persistence.py>`_
-and `security.py <https://github.com/meatballs/anvil-orm/blob/master/server_code/security.py>`_
+Create a package in the server code section of your app named 'orm_server' and two modules 
+within that package named 'persistence' and 'security'. Replace the
+contents of both modules with the code from `persistence.py <https://github.com/meatballs/anvil-orm/blob/master/server_code//orm_server/persistence.py>`_
+and `security.py <https://github.com/meatballs/anvil-orm/blob/master/server_code/orm_server/security.py>`_
 respectively.
 
-Create a 'lib' folder in the client code section of your app, add a 'crud' folder underneath it, and create a module there named 'particles'. Replace
-its content with the code from `particles.py <https://github.com/meatballs/anvil-orm/blob/master/client_code/particles.py>`_
+Create a package named 'orm_client' in the client code section of your app and a module within that package named 'particles'. Replace
+its content with the code from `particles.py <https://github.com/meatballs/anvil-orm/blob/master/client_code/orm_client/particles.py>`_
 
 Create the Data Tables
 ----------------------
@@ -36,17 +37,13 @@ Create a second table called 'book' with four columns:
     * a date column called 'published_on' 
     * a column which links to a single column in the 'author' table named 'author'.
 
-Finally, create a table called 'sequence' with two columns:
-
-    * a text column called 'name'
-    * a number column called 'next'
 
 Create the Model Module
 -----------------------
 Create a module in the client code section of your app and call it 'model'. Add
 the following code to define the Book and Author classes::
 
-    from app.lib.crud.particles import model_type, Attribute, Relationship
+    from .orm_client.particles import model_type, Attribute, Relationship
 
     @model_type
     class Author:
