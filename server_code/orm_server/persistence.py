@@ -39,8 +39,6 @@ from .orm_client.particles import ModelSearchResults
 __version__ = "0.1.18"
 camel_pattern = re.compile(r"(?<!^)(?=[A-Z])")
 
-anvil.server.call("anvil.private.enable_profiling")
-
 
 # def caching_query(search_function):
 #     """A decorator to stash the results of a data tables search."""
