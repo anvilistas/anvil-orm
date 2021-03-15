@@ -2,7 +2,8 @@ import anvil.users
 
 # MIT License
 #
-# Copyright (c) 2020 Owen Campbell
+# Copyright (c) 2020 The Anvil ORM project team members listed at
+# https://github.com/anvilistas/anvil-orm/graphs/contributors
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +23,7 @@ import anvil.users
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
-# This software is published at https://github.com/meatballs/anvil-orm
+# This software is published at # https://github.com/anvilistas/anvil-orm
 import sys
 
 import anvil.server
