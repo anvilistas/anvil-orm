@@ -23,8 +23,9 @@
 #
 # This software is published at # https://github.com/anvilistas/anvil-orm
 import anvil
-from app.client_lib import navigation
+
 from app import model, session
+from app.client_lib import navigation
 
 __version__ = "0.1.18"
 

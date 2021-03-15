@@ -34,8 +34,8 @@ import anvil.users
 from anvil.server import Capability
 from anvil.tables import app_tables
 
-from .orm_server import security
 from .orm_client.particles import ModelSearchResults
+from .orm_server import security
 
 __version__ = "0.1.18"
 camel_pattern = re.compile(r"(?<!^)(?=[A-Z])")
