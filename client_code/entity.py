@@ -228,9 +228,11 @@ def _from_row(unique_identifier, attributes, relationships):
 
 
 @classmethod
-def _get(cls, uid, max_depth=None):
+def _get(cls, uid, read_only=False, max_depth=None):
     """Provide a method to fetch an object from the server"""
-    return anvil.server.call("get_object", cls.__name__, cls.__module__, uid, max_depth)
+    return anvil.server.call(
+        "get_object", cls.__name__, cls.__module__, uid, not read_only, max_depth
+    )
 
 
 @classmethod
