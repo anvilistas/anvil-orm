@@ -20,22 +20,22 @@ from .entity import EntitySearchResults
 
 __version__ = "0.1.18"
 camel_pattern = re.compile(r"(?<!^)(?=[A-Z])")
-has_permission = None
 
 
-def _open_permissions_handler(*args, **kwargs):
+def _open_permissions_handler(**kwargs):
     return True
 
 
-def _logged_in_permissions_handler(*args, **kwargs):
+has_permission = _open_permissions_handler
+
+
+def _logged_in_permissions_handler(**kwargs):
     return anvil.users.get_user() is not None
 
 
 def set_permissions_handler(handler=None):
     global has_permission
     if handler is None:
-        handler = _open_permissions_handler
-    if handler == "user":
         handler = _logged_in_permissions_handler
     has_permission = handler
 
@@ -92,16 +92,16 @@ def _search_rows(class_name, uids):
 @anvil.server.callable
 def get_object(class_name, module_name, uid, with_capability=False, max_depth=None):
     """Create a model object instance from the relevant data table row"""
-    if has_permission("read", class_name, uid):
+    if has_permission(operation="read", class_name=class_name, uid=uid):
         module = import_module(module_name)
         cls = getattr(module, class_name)
         instance = cls._from_row(
             _get_row(class_name, module_name, uid), max_depth=max_depth
         )
         if with_capability:
-            if has_permission("update", class_name, uid):
+            if has_permission(operation="update", class_name=class_name, uid=uid):
                 instance.update_capability = Capability([class_name, uid])
-            if has_permission("delete", class_name, uid):
+            if has_permission(operation="delete", class_name=class_name, uid=uid):
                 instance.delete_capability = Capability([class_name, uid])
         return instance
 
@@ -200,15 +200,15 @@ def save_object(instance):
         else:
             raise ValueError("You do not have permission to update this object")
     else:
-        if has_permission("create", class_name):
+        if has_permission(operation="create", class_name=class_name):
             has_save_permission = True
             uid = uuid4().hex
             instance = copy(instance)
             instance.uid = uid
             row = table.add_row(uid=uid, **members)
-            if has_permission("update", class_name, uid):
+            if has_permission(operation="update", class_name=class_name, uid=uid):
                 instance.update_capability = Capability([class_name, uid])
-            if has_permission("delete", class_name, uid):
+            if has_permission(operation="delete", class_name=class_name, uid=uid):
                 instance.delete_capability = Capability([class_name, uid])
         else:
             raise ValueError("You do not have permission to save this object")
