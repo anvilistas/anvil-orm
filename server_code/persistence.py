@@ -26,11 +26,11 @@ def _open_permissions_handler(**kwargs):
     return True
 
 
-has_permission = _open_permissions_handler
-
-
 def _logged_in_permissions_handler(**kwargs):
     return anvil.users.get_user() is not None
+
+
+has_permission = _open_permissions_handler
 
 
 def set_permissions_handler(handler=None):
