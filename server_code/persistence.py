@@ -23,12 +23,12 @@ __version__ = "0.1.18"
 camel_pattern = re.compile(r"(?<!^)(?=[A-Z])")
 
 
-def _open_permissions_handler(**kwargs) -> bool:
+def _open_permissions_handler(**kwargs: str) -> bool:
     """A handler to permit all CRUD operations on all entities"""
     return True
 
 
-def _logged_in_permissions_handler(**kwargs) -> bool:
+def _logged_in_permissions_handler(**kwargs: str) -> bool:
     """A handler to permit all CRUD operations on all entities for logged in users"""
     return anvil.users.get_user() is not None
 
