@@ -8,6 +8,7 @@ import functools
 import re
 from copy import copy
 from importlib import import_module
+from typing import Callable, Iterable
 from uuid import uuid4
 
 import anvil.server
@@ -22,25 +23,28 @@ __version__ = "0.1.18"
 camel_pattern = re.compile(r"(?<!^)(?=[A-Z])")
 
 
-def _open_permissions_handler(**kwargs):
+def _open_permissions_handler(**kwargs) -> bool:
+    """A handler to permit all CRUD operations on all entities"""
     return True
 
 
-def _logged_in_permissions_handler(**kwargs):
+def _logged_in_permissions_handler(**kwargs) -> bool:
+    """A handler to permit all CRUD operations on all entities for logged in users"""
     return anvil.users.get_user() is not None
 
 
 has_permission = _open_permissions_handler
 
 
-def set_permissions_handler(handler=None):
+def set_permissions_handler(handler: Callable = None) -> None:
+    """Set the permission handling callable"""
     global has_permission
     if handler is None:
         handler = _logged_in_permissions_handler
     has_permission = handler
 
 
-def caching_query(search_function):
+def caching_query(search_function: Callable) -> Callable:
     """A decorator to stash the arguments of a data tables search."""
 
     @functools.wraps(search_function)
@@ -64,18 +68,18 @@ def caching_query(search_function):
     return wrapper
 
 
-def _camel_to_snake(name):
+def _camel_to_snake(name: str) -> str:
     """Convert a CamelCase string to snake_case"""
     return camel_pattern.sub("_", name).lower()
 
 
-def get_table(class_name):
+def get_table(class_name: str) -> app_tables.Table:
     """Return the data tables table for the given class name"""
     table_name = _camel_to_snake(class_name)
     return getattr(app_tables, table_name)
 
 
-def _get_row(class_name, module_name, uid):
+def _get_row(class_name: str, module_name: str, uid: str) -> app_tables.Row:
     """Return the data tables row for for a given object instance"""
     table = getattr(app_tables, _camel_to_snake(class_name))
     module = import_module(module_name)
@@ -84,7 +88,7 @@ def _get_row(class_name, module_name, uid):
     return table.get(**search_kwargs)
 
 
-def _search_rows(class_name, uids):
+def _search_rows(class_name: str, uids: Iterable) -> app_tables.SearchIterator:
     """Return the data tables rows for a given list of object instances"""
     return get_table(class_name).search(uid=q.any_of(*uids))
 
