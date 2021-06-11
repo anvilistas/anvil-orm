@@ -1,27 +1,9 @@
-# MIT License
+# SPDX-License-Identifier: MIT
 #
 # Copyright (c) 2020 The Anvil ORM project team members listed at
 # https://github.com/anvilistas/anvil-orm/graphs/contributors
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
-#
-# This software is published at # https://github.com/anvilistas/anvil-orm
+# This software is published at https://github.com/anvilistas/anvil-orm
 import functools
 import re
 from copy import copy
@@ -34,30 +16,32 @@ import anvil.users
 from anvil.server import Capability
 from anvil.tables import app_tables
 
-from .orm_client.particles import ModelSearchResults
-from .orm_server import security
+from .entity import EntitySearchResults
 
 __version__ = "0.1.18"
 camel_pattern = re.compile(r"(?<!^)(?=[A-Z])")
+has_permission = None
 
 
-# def caching_query(search_function):
-#     """A decorator to stash the results of a data tables search."""
+def _open_permissions_handler(*args, **kwargs):
+    return True
 
-#     @functools.wraps(search_function)
-#     def wrapper(class_name, module_name, page_length, with_class_name, **search_args):
-#         if with_class_name:
-#             search_args["class_name"] = class_name
-#         rows_id = uuid4().hex
-#         rows = search_function(**search_args)
-#         anvil.server.session[rows_id] = rows
-#         return ModelSearchResults(class_name, module_name, rows_id, page_length)
 
-#     return wrapper
+def _logged_in_permissions_handler(*args, **kwargs):
+    return anvil.users.get_user() is not None
+
+
+def set_permissions_handler(handler=None):
+    global has_permission
+    if handler is None:
+        handler = _open_permissions_handler
+    if handler == "user":
+        handler = _logged_in_permissions_handler
+    has_permission = handler
 
 
 def caching_query(search_function):
-    """A decorator to stash the results of a data tables search."""
+    """A decorator to stash the arguments of a data tables search."""
 
     @functools.wraps(search_function)
     def wrapper(
@@ -68,7 +52,7 @@ def caching_query(search_function):
             search_args["class_name"] = class_name
         rows_id = uuid4().hex
         anvil.server.session[rows_id] = search_args
-        return ModelSearchResults(
+        return EntitySearchResults(
             class_name,
             module_name,
             rows_id,
@@ -106,37 +90,26 @@ def _search_rows(class_name, uids):
 
 
 @anvil.server.callable
-def get_object(class_name, module_name, uid, max_depth=None):
+def get_object(class_name, module_name, uid, with_capability=False, max_depth=None):
     """Create a model object instance from the relevant data table row"""
-    if security.has_read_permission(class_name, uid):
+    if has_permission("read", class_name, uid):
         module = import_module(module_name)
         cls = getattr(module, class_name)
         instance = cls._from_row(
             _get_row(class_name, module_name, uid), max_depth=max_depth
         )
-        if security.has_update_permission(class_name, uid):
-            instance.update_capability = Capability([class_name, uid])
-        if security.has_delete_permission(class_name, uid):
-            instance.delete_capability = Capability([class_name, uid])
+        if with_capability:
+            if has_permission("update", class_name, uid):
+                instance.update_capability = Capability([class_name, uid])
+            if has_permission("delete", class_name, uid):
+                instance.delete_capability = Capability([class_name, uid])
         return instance
 
 
-# @anvil.server.callable
-# def fetch_objects(class_name, module_name, rows_id, page, page_length):
-#     """Return a list of object instances from a cached data tables search"""
-#     module = import_module(module_name)
-#     cls = getattr(module, class_name)
-#     rows = anvil.server.session.get(rows_id, [])
-#     start = page * page_length
-#     end = (page + 1) * page_length
-#     is_last_page = end >= len(rows)
-#     if is_last_page:
-#         del anvil.server.session[rows_id]
-#     return [cls._from_row(row) for row in rows[start:end]], is_last_page
-
-
 @anvil.server.callable
-def fetch_objects(class_name, module_name, rows_id, page, page_length, max_depth=None):
+def fetch_objects(
+    class_name, module_name, rows_id, page, page_length, read_only=True, max_depth=None
+):
     """Return a list of object instances from a cached data tables search"""
     search_definition = anvil.server.session.get(rows_id, None).copy()
     if search_definition is not None:
@@ -155,7 +128,13 @@ def fetch_objects(class_name, module_name, rows_id, page, page_length, max_depth
     cls = getattr(module, class_name)
     results = (
         [
-            get_object(class_name, module_name, row[cls._unique_identifier], max_depth)
+            get_object(
+                class_name,
+                module_name,
+                row[cls._unique_identifier],
+                not read_only,
+                max_depth,
+            )
             for row in rows[start:end]
         ],
         is_last_page,
@@ -211,30 +190,30 @@ def save_object(instance):
         if relationship.cross_reference is not None
     ]
 
-    has_permission = False
+    has_save_permission = False
     if instance.uid is not None:
         if getattr(instance, "update_capability") is not None:
             Capability.require(instance.update_capability, [class_name, instance.uid])
-            has_permission = True
+            has_save_permission = True
             row = table.get(uid=instance.uid)
             row.update(**members)
         else:
             raise ValueError("You do not have permission to update this object")
     else:
-        if security.has_create_permission(class_name):
-            has_permission = True
+        if has_permission("create", class_name):
+            has_save_permission = True
             uid = uuid4().hex
             instance = copy(instance)
             instance.uid = uid
             row = table.add_row(uid=uid, **members)
-            if security.has_update_permission(class_name, uid):
+            if has_permission("update", class_name, uid):
                 instance.update_capability = Capability([class_name, uid])
-            if security.has_delete_permission(class_name, uid):
+            if has_permission("delete", class_name, uid):
                 instance.delete_capability = Capability([class_name, uid])
         else:
             raise ValueError("You do not have permission to save this object")
 
-    if has_permission:
+    if has_save_permission:
         # Very simple cross reference update
         for xref in cross_references:
 
