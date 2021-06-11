@@ -93,6 +93,12 @@ def _search_rows(class_name: str, uids: Iterable) -> app_tables.SearchIterator:
     return get_table(class_name).search(uid=q.any_of(*uids))
 
 
+def _add_capabilities(instance: Any, class_name: str, uid: str) -> Any:
+    for operation in ("update", "delete"):
+        if has_permission(operation=operation, class_name=class_name, uid=uid):
+            setattr(instance, f"{operation}_capability", Capability([class_name, uid]))
+
+
 @anvil.server.callable
 def get_object(
     class_name: str,
@@ -109,10 +115,7 @@ def get_object(
             _get_row(class_name, module_name, uid), max_depth=max_depth
         )
         if with_capability:
-            if has_permission(operation="update", class_name=class_name, uid=uid):
-                instance.update_capability = Capability([class_name, uid])
-            if has_permission(operation="delete", class_name=class_name, uid=uid):
-                instance.delete_capability = Capability([class_name, uid])
+            _add_capabilities(instance, class_name, uid)
         return instance
 
 
@@ -222,10 +225,7 @@ def save_object(instance: Any) -> Any:
             instance = copy(instance)
             instance.uid = uid
             row = table.add_row(uid=uid, **members)
-            if has_permission(operation="update", class_name=class_name, uid=uid):
-                instance.update_capability = Capability([class_name, uid])
-            if has_permission(operation="delete", class_name=class_name, uid=uid):
-                instance.delete_capability = Capability([class_name, uid])
+            _add_capabilities(instance, class_name, uid)
         else:
             raise ValueError("You do not have permission to save this object")
 
