@@ -8,7 +8,7 @@ import functools
 import re
 from copy import copy
 from importlib import import_module
-from typing import Callable, Iterable
+from typing import Any, Callable, Iterable, List
 from uuid import uuid4
 
 import anvil.server
@@ -94,7 +94,13 @@ def _search_rows(class_name: str, uids: Iterable) -> app_tables.SearchIterator:
 
 
 @anvil.server.callable
-def get_object(class_name, module_name, uid, with_capability=False, max_depth=None):
+def get_object(
+    class_name: str,
+    module_name: str,
+    uid: str,
+    with_capability: bool = False,
+    max_depth: int = None,
+) -> Any:
     """Create a model object instance from the relevant data table row"""
     if has_permission(operation="read", class_name=class_name, uid=uid):
         module = import_module(module_name)
@@ -112,8 +118,14 @@ def get_object(class_name, module_name, uid, with_capability=False, max_depth=No
 
 @anvil.server.callable
 def fetch_objects(
-    class_name, module_name, rows_id, page, page_length, read_only=True, max_depth=None
-):
+    class_name: str,
+    module_name: str,
+    rows_id: str,
+    page: int,
+    page_length: int,
+    read_only: bool = True,
+    max_depth: int = None,
+) -> Iterable[Any]:
     """Return a list of object instances from a cached data tables search"""
     search_definition = anvil.server.session.get(rows_id, None).copy()
     if search_definition is not None:
@@ -148,13 +160,13 @@ def fetch_objects(
 
 @anvil.server.callable
 @caching_query
-def basic_search(class_name, **search_args):
+def basic_search(class_name: str, **search_args) -> app_tables.Table:
     """Perform a data tables search against the relevant table for the given class"""
     return get_table(class_name).search(**search_args)
 
 
 @anvil.server.callable
-def save_object(instance):
+def save_object(instance: Any) -> Any:
     """Persist an instance to the database by adding or updating a row"""
     class_name = type(instance).__name__
     table = get_table(class_name)
@@ -235,7 +247,7 @@ def save_object(instance):
 
 
 @anvil.server.callable
-def delete_object(instance):
+def delete_object(instance: Any) -> None:
     """Delete the data tables row for the given model instance"""
     class_name = type(instance).__name__
     Capability.require(instance.delete_capability, [class_name, instance.uid])
