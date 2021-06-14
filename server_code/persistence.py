@@ -8,7 +8,7 @@ import functools
 import re
 from copy import copy
 from importlib import import_module
-from typing import Any, Callable, Iterable, List
+from typing import Any, Callable, Iterable
 from uuid import uuid4
 
 import anvil.server
