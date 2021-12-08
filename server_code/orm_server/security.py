@@ -23,7 +23,6 @@
 #
 # This software is published at # https://github.com/anvilistas/anvil-model
 import anvil.server
-import anvil.users
 
 __version__ = "0.1.18"
 

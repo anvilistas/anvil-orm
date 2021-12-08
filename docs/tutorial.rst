@@ -5,7 +5,7 @@ For this tutorial, we're going to build a model to represent Books and their Aut
 You will need:
 
     * A new anvil app
-    * The data tables service enabled 
+    * The data tables service enabled
     * This model library installed
 
 For a book, we want to store its title, publication date and author. For an author, we
@@ -13,7 +13,7 @@ want to store a first name and a last name.
 
 Install the ORM
 ---------------
-Create a package in the server code section of your app named 'orm_server' and two modules 
+Create a package in the server code section of your app named 'orm_server' and two modules
 within that package named 'persistence' and 'security'. Replace the
 contents of both modules with the code from `persistence.py <https://github.com/meatballs/anvil-orm/blob/master/server_code//orm_server/persistence.py>`_
 and `security.py <https://github.com/meatballs/anvil-orm/blob/master/server_code/orm_server/security.py>`_
@@ -34,7 +34,7 @@ Create a second table called 'book' with four columns:
 
     * a number column called 'uid'
     * a text column called 'title'
-    * a date column called 'published_on' 
+    * a date column called 'published_on'
     * a column which links to a single column in the 'author' table named 'author'.
 
 
@@ -55,7 +55,7 @@ the following code to define the Book and Author classes::
     class Book:
         title = Attribute()
         published_on = Attribute()
-        author = Relationship(cls="Author")
+        author = Relationship(class_name="Author")
 
 Add Some Entries
 ----------------
@@ -110,7 +110,7 @@ Make a Change
 -------------
 Delete the code in your startup app (or rename it and create a new 'startup' module)
 and replace the content with::
-    
+
     from .model import Book, Author
 
     fluent_python = Book.search(title="Fluent Python")[0]
