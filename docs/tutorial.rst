@@ -26,13 +26,13 @@ Create the Data Tables
 ----------------------
 Create a data table called 'author' with three columns:
 
-    * a number column called 'uid'
+    * a text column called 'uid'
     * a text column called 'first_name'
     * a text column called 'last_name'
 
 Create a second table called 'book' with four columns:
 
-    * a number column called 'uid'
+    * a text column called 'uid'
     * a text column called 'title'
     * a date column called 'published_on'
     * a column which links to a single column in the 'author' table named 'author'.
