@@ -1,3 +1,5 @@
+# This project has been superseded by the [persistence module](https://anvil-extras.readthedocs.io/en/latest/guides/modules/persistence.html) of [Anvil Extras](https://github.com/anvilistas/anvil-extras) and should no longer be used.
+
 # Anvil ORM
 A library for [Anvil Applications](https://anvil.works) that provides Object Relational Mapping (ORM)
 functionality.
